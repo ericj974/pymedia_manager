@@ -1,4 +1,4 @@
-name: photo
+name: media
 channels:
   - https://conda.anaconda.org/menpo
   - conda-forge
