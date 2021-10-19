@@ -1,0 +1,3 @@
+[submodule "pyqtlet"]
+	path = pyqtlet
+	url = https://github.com/ericj974/pyqtlet.git

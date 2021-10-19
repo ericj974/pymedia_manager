@@ -1,0 +1,80 @@
+0th:
+	ImageWidth               : 2736
+	ImageLength              : 3648
+	BitsPerSample            : (8, 8, 8)
+	ResolutionUnit           : 2
+	ImageDescription         : hdrpl
+	Make                     : SAMSUNG
+	Model                    : XXX
+	Software                 : XXX
+	Orientation              : 1
+	DateTime                 : 2018:06:26 23:02:49
+	YCbCrPositioning         : 1
+	ExifTag                  : 299
+	GPSTag                   : 985
+	XResolution              : (72, 1)
+	YResolution              : (72, 1)
+Exif:
+	MakerNote                : Auto 
+	ISOSpeedRatings          : 2500
+	ExposureProgram          : 2
+	FNumber                  : (180, 100)
+	ExposureTime             : (60000000, 1000000000)
+	SensingMethod            : 2
+	SubSecTimeDigitized      : 490857
+	SubSecTimeOriginal       : 490857
+	SubSecTime               : 490857
+	SubjectDistanceRange     : 0
+	Sharpness                : 0
+	FocalLength              : (5580, 1000)
+	Flash                    : 0
+	Saturation               : 0
+	LightSource              : 1
+	Contrast                 : 0
+	MeteringMode             : 5
+	GainControl              : 0
+	SceneCaptureType         : 0
+	InteroperabilityTag      : 955
+	FocalLengthIn35mmFilm    : 27
+	MaxApertureValue         : (169, 100)
+	DigitalZoomRatio         : (100, 100)
+	ExposureBiasValue        : (0, 10)
+	DateTimeDigitized        : 2018:06:26 23:02:38
+	PixelYDimension          : 3648
+	WhiteBalance             : 0
+	BrightnessValue          : (0, 1)
+	DateTimeOriginal         : 2018:06:26 23:02:38
+	PixelXDimension          : 2736
+	ExposureMode             : 0
+	CompressedBitsPerPixel   : (95, 100)
+	ApertureValue            : (169, 100)
+	ComponentsConfiguration  :  
+	ColorSpace               : 1
+	SceneType                : 
+	CustomRendered           : 1
+	ShutterSpeedValue        : (298973, 10000)
+	ExifVersion              : 0210
+	FlashpixVersion          : 0100
+	FileSource               : 
+GPS:
+	GPSVersionID             : (2, 2, 0, 0)
+	GPSLatitudeRef           : N
+	GPSLatitude              : ((1, 1), (18, 1), (18507070, 1000000))
+	GPSLongitudeRef          : E
+	GPSLongitude             : ((113, 1), (34, 1), (29696044, 1000000))
+	GPSAltitudeRef           : 1
+	GPSAltitude              : (0, 100)
+	GPSTimeStamp             : ((15, 1), (2, 1), (37, 1))
+	GPSProcessingMethod      : CELLID
+	GPSDateStamp             : 2018:06:26
+Interop:
+	InteroperabilityIndex    : R98
+1st:
+	ImageWidth               : 384
+	ImageLength              : 512
+	Orientation              : 0
+	Compression              : 6
+	ResolutionUnit           : 2
+	XResolution              : (72, 1)
+	YResolution              : (72, 1)
+thumbnail:

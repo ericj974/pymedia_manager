@@ -1,0 +1,17 @@
+name: photo
+channels:
+  - https://conda.anaconda.org/menpo
+  - conda-forge
+dependencies:
+  - python=3.*
+  - numpy
+  - opencv3
+  - pillow
+  - pyqt=5.6.*
+  - piexif
+  - send2trash
+  - pip
+  - pip:
+      - pyheif
+      - pyqt5-tools
+      - PyQtWebEngine
