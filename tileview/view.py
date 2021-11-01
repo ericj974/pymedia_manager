@@ -11,7 +11,7 @@ import utils
 from controller import MainController
 from model import MainModel
 from settings import TILES_THUMBNAIL_SIZE
-from tileview.widgets import UserCommentWidget
+from tileview.widgets import UserCommentWidget, ImageWidget
 
 
 class MainTileWindow(QtWidgets.QMainWindow):
@@ -69,6 +69,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self.save_user_comment.triggered.connect(self._save_user_comment)
         self.delete_thumbnails = QAction("Delete embedded thumbnails...", self)
         self.delete_thumbnails.triggered.connect(self._delete_thumbnails)
+
         # Menu bar
         menubar = self.menuBar()
         file_menu = menubar.addMenu('File')
@@ -210,32 +211,6 @@ class MainTileWindow(QtWidgets.QMainWindow):
         for i in range(self._layout.count()):
             item = self._layout.itemAt(i)
             item.widget().scaledToWidth(win_size.width() / self.max_col)
-
-
-class ImageWidget(QtWidgets.QLabel):
-    doubleClicked = pyqtSignal(str)
-
-    def __init__(self, file):
-        super(ImageWidget, self).__init__()
-        self.setAttribute(Qt.WA_DeleteOnClose, True)
-        self.setObjectName(file)
-        self.file = ''
-        self.orig_pixmap = None
-        self.set_file(file)
-
-    def mouseDoubleClickEvent(self, e):
-        self.doubleClicked.emit(self.file)
-
-    def scaledToWidth(self, width):
-        pixmap = self.orig_pixmap.scaledToWidth(width)
-        self.setPixmap(pixmap)
-
-    def set_file(self, file):
-        if os.path.exists(file) and os.path.isfile(file):
-            self.file = file
-            self.orig_pixmap = QtGui.QPixmap(file).scaledToWidth(TILES_THUMBNAIL_SIZE)
-            if not self.orig_pixmap.isNull():
-                self.setPixmap(self.orig_pixmap)
 
 
 if __name__ == '__main__':
