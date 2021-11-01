@@ -1,4 +1,3 @@
-import glob
 import os
 import sys
 from functools import partial
@@ -75,26 +74,36 @@ class MainGPSWindow(QMainWindow):
         self.layout.addWidget(self.gps_view)
         self.central_widget.setLayout(self.layout)
         # Actions
-        self.save_act = QAction(QIcon(os.path.join(icon_path, "save.png")), "Save...", self)
+        self.save_act = QAction(QIcon(os.path.join(icon_path, "save.png")), "Save GPS coords...", self)
         self.save_act.setShortcut('Ctrl+S')
         self.save_act.triggered.connect(self.save_gps)
         self.save_act.setEnabled(True)
         self.addAction(self.save_act)
-        self.screen_cap_act = QAction("Take screenshot...", self)
+        self.screen_cap_act = QAction("Save current map screenshot...", self)
         self.screen_cap_act.setShortcut('Ctrl+Shift+S')
         self.screen_cap_act.triggered.connect(self.screen_capture)
         self.screen_cap_act.setEnabled(True)
         self.addAction(self.screen_cap_act)
-        self.decrease_opacity_act = QAction("Decrease opacity...", self)
+        self.decrease_opacity_act = QAction("Decrease marker opacity...", self)
         self.decrease_opacity_act.setShortcut('Ctrl+-')
         self.decrease_opacity_act.triggered.connect(self._decrease_opacity)
         self.decrease_opacity_act.setEnabled(True)
         self.addAction(self.decrease_opacity_act)
-        self.increase_opacity_act = QAction("Increase opacity...", self)
+        self.increase_opacity_act = QAction("Increase marker opacity...", self)
         self.increase_opacity_act.setShortcut('Ctrl+=')
         self.increase_opacity_act.triggered.connect(self._increase_opacity)
         self.increase_opacity_act.setEnabled(True)
         self.addAction(self.increase_opacity_act)
+
+        # Menu bar
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('File')
+        file_menu.addAction(self.save_act)
+        file_menu.addAction(self.screen_cap_act)
+
+        tools_menu = menubar.addMenu("Tools")
+        tools_menu.addAction(self.decrease_opacity_act)
+        tools_menu.addAction(self.increase_opacity_act)
 
         # Working with the maps with pyqtlet
         self.map = L.map(self.gps_view)
@@ -350,13 +359,7 @@ class MainGPSWindow(QMainWindow):
 
         exif = utils.update_geotagging(exif, lng_lat_new['lng'], lng_lat_new['lat'])
         self.exif_dic[file] = exif
-        exif_bytes = piexif.dump(exif)
-
-        image = Image.open(file)
-        qimage = ImageQt.ImageQt(image)
-        if qimage.isNull():
-            return
-        ImageQt.fromqimage(qimage).save(file, exif=exif_bytes, optimize=True, quality=95)
+        utils.save_exif(exif, filepath=file)
 
     def save_gps(self):
         for file, marker in self.markers_dic.items():

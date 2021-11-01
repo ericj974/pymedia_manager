@@ -5,6 +5,8 @@ from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtGui import QImage, QPixmap, QTransform, QColor, qRgb, QPalette, QKeySequence
 from PyQt5.QtWidgets import QLabel, QRubberBand, QSizePolicy, QShortcut
 
+import utils
+
 
 class State:
     normal = "normal"

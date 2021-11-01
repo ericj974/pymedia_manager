@@ -1,9 +1,16 @@
 import datetime
+import json
 import os
 
 import numpy as np
 import piexif
+import piexif.helper
 from PIL import Image
+
+user_comment_template = {
+    'tags': [],
+    'comments': ""
+}
 
 
 # cf https://www.blog.pythonlibrary.org/2010/03/28/getting-photo-metadata-exif-using-python/
@@ -17,6 +24,33 @@ def get_exif(filepath):
         return None
     return exif_dict
 
+def get_exif_v2(filepath):
+    assert os.path.exists(filepath), 'File ' + filepath + 'does not exist'
+    try:
+        exif_dict = piexif.load(filepath)
+    except KeyError:
+        print(f"Cannot find exif for image {filepath}")
+        return None
+    return exif_dict
+
+
+
+def get_exif_user_comment(filepath):
+    exif_dict = get_exif_v2(filepath)
+    if piexif.ExifIFD.UserComment in exif_dict["Exif"]:
+        user_comment = piexif.helper.UserComment.load(exif_dict["Exif"][piexif.ExifIFD.UserComment])
+        # Deserialize
+        return json.loads(user_comment)
+    return user_comment_template.copy()
+
+
+def update_user_comment(exif_dict, userdata):
+    exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(json.dumps(userdata),
+                                                                                   encoding='unicode')
+def save_exif(exif_dict, filepath):
+    assert os.path.exists(filepath)
+    exif_bytes = piexif.dump(exif_dict)
+    piexif.insert(exif_bytes, filepath)
 
 def print_exif(exif):
     for ifd in exif:
@@ -43,6 +77,7 @@ def get_datetime(exif):
         return datetime.datetime.strptime(exif['0th'][piexif.ImageIFD.DateTime].decode("utf-8"),
                                           '%Y:%m:%d %H:%M:%S')
 
+
 def get_datetime_exiftool(exif):
     keys = {'EXIF:DateTimeOriginal', 'H264:DateTimeOriginal',
             'QuickTime:MediaCreateDate', 'ASF:CreationDate'}
@@ -53,7 +88,7 @@ def get_datetime_exiftool(exif):
     if key:
         try:
             t = datetime.datetime.strptime(exif[key],
-                                          '%Y:%m:%d %H:%M:%S')
+                                           '%Y:%m:%d %H:%M:%S')
         except ValueError as v:
             if len(v.args) > 0 and v.args[0].startswith('unconverted data remains: '):
                 # remove +XX at the end
@@ -62,6 +97,7 @@ def get_datetime_exiftool(exif):
             else:
                 raise
         return t
+
 
 # https://developer.here.com/blog/getting-started-with-geocoding-exif-image-metadata-in-python3
 def get_geotagging(exif):

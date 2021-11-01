@@ -114,9 +114,8 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
 
     def _write_datetime_to_exif(self, filepath, datetime_new):
         print('Load image ' + filepath + ' ...')
-        im = Image.open(filepath)
         try:
-            exif_dict = piexif.load(im.info["exif"])
+            exif_dict = utils.get_exif(filepath)
             exif_dict["0th"][piexif.ImageIFD.DateTime] = datetime.datetime.strftime(datetime_new, '%Y:%m:%d %H:%M:%S')
         except KeyError:
             o = io.BytesIO()
@@ -149,8 +148,7 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
 
             exif_dict = {"0th": zeroth_ifd, "Exif": exif_ifd, "GPS": gps_ifd, "1st": first_ifd, "thumbnail": thumbnail}
 
-        exif_bytes = piexif.dump(exif_dict)
-        im.save(filepath, exif=exif_bytes)
+        utils.save_exif(exif_dict=exif_dict, filepath=filepath)
 
     def _is_timedelta_ok(self, time1, time2):
         return abs(time1 - time2) <= self.timedelta_max

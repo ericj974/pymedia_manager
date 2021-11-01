@@ -5,11 +5,13 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from PyQt5.QtGui import QGuiApplication
-from PyQt5.QtWidgets import QStatusBar
+from PyQt5.QtWidgets import QStatusBar, QHBoxLayout, QVBoxLayout, QAction
 
+import utils
 from controller import MainController
 from model import MainModel
 from settings import TILES_THUMBNAIL_SIZE
+from tileview.widgets import UserCommentWidget
 
 
 class MainTileWindow(QtWidgets.QMainWindow):
@@ -37,21 +39,56 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self._files_to_process = None
         # Path -> widget dict
         self.image_widgets = {}
-        self.scrollArea = QtWidgets.QScrollArea(widgetResizable=True)
-        self.setCentralWidget(self.scrollArea)
 
-        content_widget = QtWidgets.QWidget()
-        self.scrollArea.setWidget(content_widget)
+        # Tiles widget
+        self.scrollArea = QtWidgets.QScrollArea(widgetResizable=True)
+        self.content_widget = QtWidgets.QWidget()
+        self.scrollArea.setWidget(self.content_widget)
         self._layout = QtWidgets.QGridLayout()
-        content_widget.setLayout(self._layout)
+        self.content_widget.setLayout(self._layout)
+
+        # Side Comment widget
+        self.text_widget  = UserCommentWidget()
+        self.text_widget.resize(self.size() * 1 / 4)
+
+        # Set the central Widget
+        self.layout = QHBoxLayout()
+        self.layout.addWidget(self.scrollArea, 3)
+        self.layout.addWidget(self.text_widget, 1)
+        self.central_widget = QtWidgets.QWidget()
+        self.central_widget.setLayout(self.layout)
+        self.setCentralWidget(self.central_widget)
 
         # Timer for loading the images (avoid freeze)
         self._timer = QtCore.QTimer(self, interval=1)
         self._timer.timeout.connect(self.on_timeout_process_next_file)
 
+        # Menu Actions
+        self.save_user_comment = QAction("Save user comment / tags...", self)
+        self.save_user_comment.setShortcut('Ctrl+S')
+        self.save_user_comment.triggered.connect(self._save_user_comment)
+        self.delete_thumbnails = QAction("Delete embedded thumbnails...", self)
+        self.delete_thumbnails.triggered.connect(self._delete_thumbnails)
+        # Menu bar
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('File')
+        file_menu.addAction(self.save_user_comment)
+        tools_menu = menubar.addMenu("Tools")
+        tools_menu.addAction(self.delete_thumbnails)
+
         # Initial window size
         self.resize(QGuiApplication.primaryScreen().availableSize() * 3 / 5)
         self.setStatusBar(QStatusBar())
+
+    def _save_user_comment(self):
+        self.text_widget.save_comment()
+
+    def _delete_thumbnails(self):
+        for file in self._model.files:
+            exif_dict = utils.get_exif_v2(file)
+            if 'thumbnail' in exif_dict and exif_dict['thumbnail'] is not None:
+                del exif_dict['thumbnail']
+            utils.save_exif(exif_dict, filepath=file)
 
     def _reset_state(self):
         self._timer.stop()
@@ -104,10 +141,12 @@ class MainTileWindow(QtWidgets.QMainWindow):
         # Make sure we reload the selected filepath, in case the signal is emitted because the image has been modified
         if filepath in self.image_widgets:
             self.image_widgets[filepath].set_file(filepath)
-            self.image_widgets[filepath].scaledToWidth(self.size().width() / self.max_col)
+            self.image_widgets[filepath].scaledToWidth(self.scrollArea.size().width() / self.max_col)
             # Scroll down to the selected image
             posy = self.scrollArea.findChild(QtWidgets.QLabel, filepath).pos().y()
             self.scrollArea.verticalScrollBar().setValue(posy)
+            # Display the comment
+            self.text_widget.update_comment(filepath)
         else:
             # Seems like a file has been added (or a rename)
             self.update_dirpath_content()
@@ -129,7 +168,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
     @pyqtSlot(str)
     def on_watcher_file_changed(self, filepath):
         self.image_widgets[filepath].set_file(filepath)
-        self.image_widgets[filepath].scaledToWidth(self.size().width() / self.max_col)
+        self.image_widgets[filepath].scaledToWidth(self.scrollArea.size().width() / self.max_col)
         self.repaint()
 
     @pyqtSlot(str)
@@ -156,7 +195,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
         if widget.orig_pixmap and not widget.orig_pixmap.isNull():
             widget.setAttribute(Qt.WA_DeleteOnClose, True)
-            widget.scaledToWidth(self.size().width() / self.max_col)
+            widget.scaledToWidth(self.scrollArea.size().width() / self.max_col)
             self.image_widgets[file] = widget
             self._layout.addWidget(widget, self.row_idx, self.col_idx)
             self.col_idx = (self.col_idx + 1)
@@ -167,7 +206,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
             widget.close()
 
     def resize_widgets(self):
-        win_size = self.size()
+        win_size = self.scrollArea.size()
         for i in range(self._layout.count()):
             item = self._layout.itemAt(i)
             item.widget().scaledToWidth(win_size.width() / self.max_col)
