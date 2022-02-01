@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSlot, QModelIndex
+from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import *
 
 from controller import MainController
@@ -126,4 +126,3 @@ class PhotoManagementView(QMainWindow, gui.Ui_MainWindow):
         index = self.widget.fileModel.index(file, 0)
         if index.row() != -1:
             self.widget.listview.setCurrentIndex(index)
-

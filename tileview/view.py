@@ -1,16 +1,14 @@
 import copy
-import os
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
-from PyQt5.QtCore import pyqtSlot, pyqtSignal
+from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QGuiApplication
-from PyQt5.QtWidgets import QStatusBar, QHBoxLayout, QVBoxLayout, QAction
+from PyQt5.QtWidgets import QStatusBar, QHBoxLayout, QAction
 
 import utils
 from controller import MainController
 from model import MainModel
-from settings import TILES_THUMBNAIL_SIZE
 from tileview.widgets import UserCommentWidget, ImageWidget
 
 
@@ -48,7 +46,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self.content_widget.setLayout(self._layout)
 
         # Side Comment widget
-        self.text_widget  = UserCommentWidget()
+        self.text_widget = UserCommentWidget()
         self.text_widget.resize(self.size() * 1 / 4)
 
         # Set the central Widget

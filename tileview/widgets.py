@@ -1,12 +1,10 @@
-import os
-import sys
 import copy
+import os
 
-import piexif
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QStatusBar, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QVBoxLayout
 
 import utils
 from settings import TILES_THUMBNAIL_SIZE
@@ -18,7 +16,7 @@ class UserCommentWidget(QtWidgets.QWidget):
         vlay = QVBoxLayout()
         self.setLayout(vlay)
         self.title = QtWidgets.QLabel()
-        self.text_widget  = QtWidgets.QTextEdit()
+        self.text_widget = QtWidgets.QTextEdit()
         self.tags_widget = QtWidgets.QTextEdit()
         self.filepath = None
         vlay.addWidget(self.title)
@@ -52,7 +50,7 @@ class UserCommentWidget(QtWidgets.QWidget):
 
 
 class TilesWidget(QtWidgets.QWidget):
-    def __init__(self,max_col=3, *args, **kwargs):
+    def __init__(self, max_col=3, *args, **kwargs):
         QtWidgets.QWidget.__init__(self, *args, **kwargs)
 
         # Max col settings for the gridlayout
@@ -183,6 +181,7 @@ class TilesWidget(QtWidgets.QWidget):
             item = self._layout.itemAt(i)
             item.widget().scaledToWidth(win_size.width() / self.max_col)
 
+
 class ImageWidget(QtWidgets.QLabel):
     doubleClicked = pyqtSignal(str)
 
@@ -198,7 +197,7 @@ class ImageWidget(QtWidgets.QLabel):
         self.doubleClicked.emit(self.file)
 
     def scaledToWidth(self, width):
-        pixmap = self.orig_pixmap.scaledToWidth(width)
+        pixmap = self.orig_pixmap.scaledToWidth(int(width))
         self.setPixmap(pixmap)
 
     def set_file(self, file):
@@ -207,7 +206,3 @@ class ImageWidget(QtWidgets.QLabel):
             self.orig_pixmap = QtGui.QPixmap(file).scaledToWidth(TILES_THUMBNAIL_SIZE)
             if not self.orig_pixmap.isNull():
                 self.setPixmap(self.orig_pixmap)
-
-
-
-

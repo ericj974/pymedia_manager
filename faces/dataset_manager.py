@@ -1,16 +1,12 @@
 import logging
 import os
-import time
 from ast import literal_eval
 
 import cv2
 import numpy as np
 import pandas as pd
 from deepface import DeepFace
-from deepface.DeepFace import build_model
 from deepface.basemodels import Boosting
-from deepface.commons import functions, distance as dst
-from tqdm import tqdm
 
 from faces.face_manager import ModelType
 
@@ -111,7 +107,7 @@ class FaceDatasetManager():
         img = DeepFace.detectFace(img_path=path, align=True)
         img = (img * 255.).astype(np.uint8)
         # Embedding generation
-        embedding_dic = self.get_embedding(path)
+        embedding_dic = self._get_embedding(path)
         cv2.imwrite(os.path.join(self.path, img_name), cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
         item = {'img_name': img_name, 'face_name': face_name}
         item.update(embedding_dic)
@@ -134,7 +130,7 @@ class FaceDatasetManager():
             pass
         self.store.to_csv(self.store_path, index=False)
 
-    def get_embedding(self, path, model_dic=None):
+    def _get_embedding(self, path, model_dic=None):
         model_dic = model_dic if model_dic is not None else self.models
 
         out = {}
@@ -164,7 +160,7 @@ class FaceDatasetManager():
             # Get name and index
             face_name, _ = fname.rsplit("_", 1)
             # Embedding generation
-            embedding_dic = self.get_embedding(os.path.join(self.path, fname), model_dic=model_dic)
+            embedding_dic = self._get_embedding(os.path.join(self.path, fname), model_dic=model_dic)
             item = {'img_name': fname, 'face_name': face_name}
             item.update(embedding_dic)
             df = df.append(item, ignore_index=True)

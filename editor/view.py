@@ -3,7 +3,7 @@ import sys
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QSize, pyqtSlot
-from PyQt5.QtGui import QIcon, QImage, QPalette, QWheelEvent
+from PyQt5.QtGui import QIcon, QPalette, QWheelEvent
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction,
                              QSlider, QToolButton, QToolBar, QDockWidget, QMessageBox, QGridLayout,
                              QScrollArea, QStatusBar, QFileDialog, QShortcut)
@@ -31,8 +31,6 @@ class PhotoEditorWindow(QMainWindow):
         self.createMenus()
         self.createToolBar()
         self.show()
-
-        self.image = QImage()
 
         self.setAttribute(Qt.WA_DeleteOnClose, True)
         # listen for model event
@@ -131,6 +129,9 @@ class PhotoEditorWindow(QMainWindow):
         self.fit_to_window_act.setCheckable(True)
         self.fit_to_window_act.setChecked(True)
 
+        self.detect_faces_act = QAction("Detect Faces", self)
+        self.detect_faces_act.triggered.connect(self._detect_faces)
+
         # And the shortcuts
         QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_image)
         QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_image)
@@ -174,6 +175,8 @@ class PhotoEditorWindow(QMainWindow):
         tool_menu.addAction(self.normal_size_act)
         tool_menu.addSeparator()
         tool_menu.addAction(self.fit_to_window_act)
+        tool_menu.addSeparator()
+        tool_menu.addAction(self.detect_faces_act)
 
         views_menu = menu_bar.addMenu('Views')
         views_menu.addAction(self.tools_menu_act)
@@ -284,6 +287,9 @@ class PhotoEditorWindow(QMainWindow):
         self.zoom_out_act.setEnabled(True)
         self.normal_size_act.setEnabled(True)
 
+    def _detect_faces(self):
+        pass
+
     def openImage(self, file=""):
         """Load a new image into the """
         if file == "":
@@ -292,7 +298,7 @@ class PhotoEditorWindow(QMainWindow):
                     GIF Files (*.gif)")
 
         if file:
-            self.image_label.set_image_from_file(file)
+            self.image_label.load_image(file)
             self.cumul_scale_factor = 1
             self.scroll_area.setVisible(True)
             self.print_act.setEnabled(True)

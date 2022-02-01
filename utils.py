@@ -5,12 +5,17 @@ import os
 import numpy as np
 import piexif
 import piexif.helper
+import pytz
 from PIL import Image
+from tzwhere import tzwhere
 
 user_comment_template = {
     'tags': [],
     'comments': ""
 }
+
+# GPS -> Timezone
+TZWHERE = tzwhere.tzwhere()
 
 
 # cf https://www.blog.pythonlibrary.org/2010/03/28/getting-photo-metadata-exif-using-python/
@@ -24,6 +29,7 @@ def get_exif(filepath):
         return None
     return exif_dict
 
+
 def get_exif_v2(filepath):
     assert os.path.exists(filepath), 'File ' + filepath + 'does not exist'
     try:
@@ -32,7 +38,6 @@ def get_exif_v2(filepath):
         print(f"Cannot find exif for image {filepath}")
         return None
     return exif_dict
-
 
 
 def get_exif_user_comment(filepath):
@@ -47,10 +52,13 @@ def get_exif_user_comment(filepath):
 def update_user_comment(exif_dict, userdata):
     exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(json.dumps(userdata),
                                                                                    encoding='unicode')
+
+
 def save_exif(exif_dict, filepath):
     assert os.path.exists(filepath)
     exif_bytes = piexif.dump(exif_dict)
     piexif.insert(exif_bytes, filepath)
+
 
 def print_exif(exif):
     for ifd in exif:
@@ -79,16 +87,40 @@ def get_datetime(exif):
 
 
 def get_datetime_exiftool(exif):
-    keys = {'EXIF:DateTimeOriginal', 'H264:DateTimeOriginal',
-            'QuickTime:MediaCreateDate', 'ASF:CreationDate'}
+    def correct_time_quicktime_from_gps(t, exif):
+        key = 'QuickTime:GPSCoordinates'
+
+        # Try to offset the time using gps coords lat, lng
+        if key in exif:
+            lat, lng = exif[key].split(" ")
+            lat, lng = float(lat), float(lng)
+            timezone_str = TZWHERE.tzNameAt(lat, lng)  # Seville coordinates
+            timezone = pytz.timezone(timezone_str)
+            return t + timezone.utcoffset(t)
+
+        # No gps coords. We will compare 'File:FileModifyDate' to t
+        file_modify_datetime = datetime.datetime.strptime(exif['File:FileModifyDate'], '%Y:%m:%d %H:%M:%S%z')
+        delta_with_t = t - (file_modify_datetime.replace(tzinfo=None) - file_modify_datetime.utcoffset())
+        if delta_with_t.total_seconds() < 60.0:
+            return file_modify_datetime.replace(tzinfo=None)
+
+        # Here we
+        raise NotImplementedError()
+
+    keys_dict = {'EXIF:DateTimeOriginal': None, 'H264:DateTimeOriginal': None,
+                 'QuickTime:MediaCreateDate': correct_time_quicktime_from_gps, 'ASF:CreationDate': None}
     try:
-        key = keys.intersection(exif.keys()).pop()
+        key = set(keys_dict.keys()).intersection(exif.keys()).pop()
     except TypeError as e:
         key = None
     if key:
         try:
             t = datetime.datetime.strptime(exif[key],
                                            '%Y:%m:%d %H:%M:%S')
+            # Update t by taking into account timezone of where the media was taken
+            if keys_dict[key] is not None:
+                t = keys_dict[key](t, exif)
+
         except ValueError as v:
             if len(v.args) > 0 and v.args[0].startswith('unconverted data remains: '):
                 # remove +XX at the end
@@ -96,6 +128,8 @@ def get_datetime_exiftool(exif):
                                                '%Y:%m:%d %H:%M:%S')
             else:
                 raise
+        except NotImplementedError as v:  # Catch unable to find timezone
+            raise
         return t
 
 

@@ -1,17 +1,21 @@
 name: media
 channels:
-  - https://conda.anaconda.org/menpo
   - conda-forge
+  - defaults
 dependencies:
   - python=3.*
   - numpy
-  - opencv3
+  - opencv
   - pillow
-  - pyqt=5.6.*
+  - pyqt
+  - pyqtwebengine
   - piexif
   - send2trash
+  - tzwhere # this is to correct utc to correct timezone in case of QuickTime videos
+  - pytz
   - pip
   - pip:
       - pyheif
-      - pyqt5-tools
-      - PyQtWebEngine
+#      - pyqt5-tools # TO have QTDesigner. But conflict right now with conda version of pyqt
+#      - PyQtWebEngine
+#      - deepface

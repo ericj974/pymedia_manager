@@ -11,9 +11,7 @@ from deepface.commons import functions, distance as dst
 from deepface.detectors import (DlibWrapper as DDlibWrapper, SsdWrapper, RetinaFaceWrapper,
                                 MtcnnWrapper, OpenCvWrapper)
 from deepface.extendedmodels import Emotion, Age, Gender, Race
-from keras_preprocessing import image
 from tqdm import tqdm
-
 
 """
     Generic Model Types
@@ -190,8 +188,8 @@ class FaceDetectorManager():
         return results
 
     @staticmethod
-    def find(img_path, dataset_manager, enforce_detection=True, detector_backend='opencv',
-             align=True, prog_bar=True, normalization='base'):
+    def recognize_face(img_path, dataset_manager, enforce_detection=True, detector_backend='opencv',
+                       align=True, prog_bar=True, normalization='base'):
 
         """
         This function applies verification several times and find an identity in a database

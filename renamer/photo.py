@@ -1,7 +1,7 @@
-import glob
-import os
 import datetime
+import glob
 import io
+import os
 
 import piexif
 from PIL import Image

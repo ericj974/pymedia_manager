@@ -3,8 +3,6 @@ import sys
 from functools import partial
 
 import piexif
-from PIL import Image
-from PIL import ImageQt
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtGui import QIcon, QPixmap
@@ -65,9 +63,9 @@ class MainGPSWindow(QMainWindow):
 
         # GPS widget
         self.gps_view = MyMapWidget(self.central_widget)
-        # See https://stackoverflow.com/questions/66925445/qt-webengine-not-loading-openstreetmap-tiles
-        interceptor = Interceptor()
-        self.gps_view.page.profile().setUrlRequestInterceptor(interceptor)
+        # # See https://stackoverflow.com/questions/66925445/qt-webengine-not-loading-openstreetmap-tiles
+        # interceptor = Interceptor()
+        # self.gps_view.page.profile().setRequestInterceptor(interceptor)
         # Main Layout
         self.layout = QHBoxLayout()
         self.layout.addWidget(self.gps_table)

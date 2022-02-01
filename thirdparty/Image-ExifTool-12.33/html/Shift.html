@@ -2,34 +2,35 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>ExifTool Date/Time Shift Module</title>
-<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<link rev="made" href="mailto:root@osx219.apple.com" />
+    <title>ExifTool Date/Time Shift Module</title>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+    <link href="mailto:root@osx219.apple.com" rev="made"/>
 </head>
 
 <body style="background-color: white">
-<table border="0" width="100%" cellspacing="0" cellpadding="3">
-<tr><td class="_podblock_" style="background-color: #cccccc" valign="middle">
-<big><strong><span class="_podblock_">&nbsp;ExifTool Date/Time Shift Module</span></strong></big>
-</td></tr>
+<table border="0" cellpadding="3" cellspacing="0" width="100%">
+    <tr>
+        <td class="_podblock_" style="background-color: #cccccc" valign="middle">
+            <big><strong><span class="_podblock_">&nbsp;ExifTool Date/Time Shift Module</span></strong></big>
+        </td>
+    </tr>
 </table>
 
 
-
 <ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#METHODS">METHODS</a>
-    <ul>
-      <li><a href="#ShiftTime">ShiftTime</a></li>
-    </ul>
-  </li>
-  <li><a href="#SHIFT-STRING">SHIFT STRING</a></li>
-  <li><a href="#NOTES">NOTES</a></li>
-  <li><a href="#TRICKY">TRICKY</a></li>
-  <li><a href="#BUGS">BUGS</a></li>
-  <li><a href="#AUTHOR">AUTHOR</a></li>
-  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+    <li><a href="#NAME">NAME</a></li>
+    <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+    <li><a href="#METHODS">METHODS</a>
+        <ul>
+            <li><a href="#ShiftTime">ShiftTime</a></li>
+        </ul>
+    </li>
+    <li><a href="#SHIFT-STRING">SHIFT STRING</a></li>
+    <li><a href="#NOTES">NOTES</a></li>
+    <li><a href="#TRICKY">TRICKY</a></li>
+    <li><a href="#BUGS">BUGS</a></li>
+    <li><a href="#AUTHOR">AUTHOR</a></li>
+    <li><a href="#SEE-ALSO">SEE ALSO</a></li>
 </ul>
 
 <h1 id="NAME">NAME</h1>
@@ -51,33 +52,37 @@
 
 <dl>
 
-<dt id="Inputs">Inputs:</dt>
-<dd>
+    <dt id="Inputs">Inputs:</dt>
+    <dd>
 
-<p>0) Date/time string in EXIF format (eg. <code>2016:01:30 11:45:00</code>).</p>
+        <p>0) Date/time string in EXIF format (eg. <code>2016:01:30 11:45:00</code>).</p>
 
-<p>1) Shift string (see below) with optional leading sign for shift direction.</p>
+        <p>1) Shift string (see below) with optional leading sign for shift direction.</p>
 
-<p>2) [optional] Direction of shift (-1 or +1), or 0 or undef to use the sign from the shift string.</p>
+        <p>2) [optional] Direction of shift (-1 or +1), or 0 or undef to use the sign from the shift string.</p>
 
-<p>3) [optional] Reference to time-shift hash -- filled in by first call to <b>ShiftTime</b>, and used in subsequent calls to shift date/time values by the same relative amount (see <a href="#TRICKY">&quot;TRICKY&quot;</a> section below).</p>
+        <p>3) [optional] Reference to time-shift hash -- filled in by first call to <b>ShiftTime</b>, and used in
+            subsequent calls to shift date/time values by the same relative amount (see <a href="#TRICKY">&quot;TRICKY&quot;</a>
+            section below).</p>
 
-<p>or</p>
+        <p>or</p>
 
-<p>0) Shift string (and $_ contains the input date/time string).</p>
+        <p>0) Shift string (and $_ contains the input date/time string).</p>
 
-</dd>
-<dt id="Return-value">Return value:</dt>
-<dd>
+    </dd>
+    <dt id="Return-value">Return value:</dt>
+    <dd>
 
-<p>Error string, or undef on success and the input date/time string is shifted by the specified amount.</p>
+        <p>Error string, or undef on success and the input date/time string is shifted by the specified amount.</p>
 
-</dd>
+    </dd>
 </dl>
 
 <h1 id="SHIFT-STRING">SHIFT STRING</h1>
 
-<p>Time shifts are applied to standard EXIF-formatted date/time values (eg. <code>2005:03:14 18:55:00</code>). Date-only and time-only values may also be shifted, and an optional timezone (eg. <code>-05:00</code>) is also supported. Here are some general rules and examples to explain how shift strings are interpreted:</p>
+<p>Time shifts are applied to standard EXIF-formatted date/time values (eg. <code>2005:03:14 18:55:00</code>). Date-only
+    and time-only values may also be shifted, and an optional timezone (eg. <code>-05:00</code>) is also supported. Here
+    are some general rules and examples to explain how shift strings are interpreted:</p>
 
 <p>Date-only values are shifted using the following formats:</p>
 
@@ -98,7 +103,9 @@
     &#39;+h&#39;        - shift timezone hours only
     &#39;-h&#39;        - negative shift of timezone hours only</code></pre>
 
-<p>A valid shift value consists of one or two arguments, separated by a space. If only one is provided, it is assumed to be a time shift when applied to a time-only or a date/time value, or a date shift when applied to a date-only value. For example:</p>
+<p>A valid shift value consists of one or two arguments, separated by a space. If only one is provided, it is assumed to
+    be a time shift when applied to a time-only or a date/time value, or a date shift when applied to a date-only value.
+    For example:</p>
 
 <pre><code>    &#39;1&#39;         - shift by 1 hour if applied to a time or date/time
                   value, or by one day if applied to a date value
@@ -126,7 +133,8 @@
     &#39;26:: 0&#39;    - shift date by 26 years
     &#39;+:30&#39;      - shift timezone by 30 minutes</code></pre>
 
-<p>Below are some specific examples applied to real date and/or time values (&#39;Dir&#39; is the applied shift direction: &#39;+&#39; is positive, &#39;-&#39; is negative):</p>
+<p>Below are some specific examples applied to real date and/or time values (&#39;Dir&#39; is the applied shift
+    direction: &#39;+&#39; is positive, &#39;-&#39; is negative):</p>
 
 <pre><code>     Original Value         Shift   Dir    Shifted Value
     ---------------------  -------  ---  ---------------------
@@ -146,19 +154,30 @@
 
 <h1 id="NOTES">NOTES</h1>
 
-<p>The format of the original date/time value is not changed when the time shift is applied. This means that the length of the date/time string will not change, and only the numbers in the string will be modified. The only exception to this rule is that a &#39;Z&#39; timezone is changed to &#39;+00:00&#39; notation if a timezone shift is applied. A timezone will not be added to the date/time string.</p>
+<p>The format of the original date/time value is not changed when the time shift is applied. This means that the length
+    of the date/time string will not change, and only the numbers in the string will be modified. The only exception to
+    this rule is that a &#39;Z&#39; timezone is changed to &#39;+00:00&#39; notation if a timezone shift is applied. A
+    timezone will not be added to the date/time string.</p>
 
 <h1 id="TRICKY">TRICKY</h1>
 
-<p>This module is perhaps more complicated than it needs to be because it is designed to be very flexible in the way time shifts are specified and applied...</p>
+<p>This module is perhaps more complicated than it needs to be because it is designed to be very flexible in the way
+    time shifts are specified and applied...</p>
 
-<p>The ability to shift dates by Y years, M months, etc, conflicts with the design goal of maintaining a constant shift for all time values when applying a batch shift. This is because shifting by 1 month can be equivalent to anything from 28 to 31 days, and 1 year can be 365 or 366 days, depending on the starting date.</p>
+<p>The ability to shift dates by Y years, M months, etc, conflicts with the design goal of maintaining a constant shift
+    for all time values when applying a batch shift. This is because shifting by 1 month can be equivalent to anything
+    from 28 to 31 days, and 1 year can be 365 or 366 days, depending on the starting date.</p>
 
-<p>The inconsistency is handled by shifting the first tag found with the actual specified shift, then calculating the equivalent time difference in seconds for this shift and applying this difference to subsequent tags in a batch conversion. So if it works as designed, the behaviour should be both intuitive and mathematically correct, and the user shouldn&#39;t have to worry about details such as this (in keeping with Perl&#39;s &quot;do the right thing&quot; philosophy).</p>
+<p>The inconsistency is handled by shifting the first tag found with the actual specified shift, then calculating the
+    equivalent time difference in seconds for this shift and applying this difference to subsequent tags in a batch
+    conversion. So if it works as designed, the behaviour should be both intuitive and mathematically correct, and the
+    user shouldn&#39;t have to worry about details such as this (in keeping with Perl&#39;s &quot;do the right thing&quot;
+    philosophy).</p>
 
 <h1 id="BUGS">BUGS</h1>
 
-<p>Due to the use of the standard time library functions, dates are typically limited to the range 1970 to 2038 on 32-bit systems.</p>
+<p>Due to the use of the standard time library functions, dates are typically limited to the range 1970 to 2038 on
+    32-bit systems.</p>
 
 <h1 id="AUTHOR">AUTHOR</h1>
 
@@ -170,10 +189,12 @@
 
 <p><a>Image::ExifTool(3pm)</a></p>
 
-<table border="0" width="100%" cellspacing="0" cellpadding="3">
-<tr><td class="_podblock_" style="background-color: #cccccc" valign="middle">
-<big><strong><span class="_podblock_">&nbsp;ExifTool Date/Time Shift Module</span></strong></big>
-</td></tr>
+<table border="0" cellpadding="3" cellspacing="0" width="100%">
+    <tr>
+        <td class="_podblock_" style="background-color: #cccccc" valign="middle">
+            <big><strong><span class="_podblock_">&nbsp;ExifTool Date/Time Shift Module</span></strong></big>
+        </td>
+    </tr>
 </table>
 
 </body>
