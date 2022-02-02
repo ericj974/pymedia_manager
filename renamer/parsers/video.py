@@ -3,7 +3,6 @@ from renamer.parsers import ParserWithRegexSegments, YearMonthDayParser, TimePar
     HourParser, MinParser
 
 
-# 'IMG_XXXX.HEIC'
 class ParserMTS(ClassWithTag, ParserWithRegexSegments):
     tag = 'video'
 
@@ -21,7 +20,7 @@ class ParserMTS(ClassWithTag, ParserWithRegexSegments):
         self.reg_segments = [ParserMTS.Part1()]
 
 
-class ParserMP4(ClassWithTag, ParserWithRegexSegments):
+class ParserOnePlus9(ClassWithTag, ParserWithRegexSegments):
     tag = 'video'
 
     class Part1(ParserWithRegexSegments):
@@ -34,4 +33,20 @@ class ParserMP4(ClassWithTag, ParserWithRegexSegments):
 
     def __init__(self, file_extension='mp4'):
         super().__init__(file_extension)
-        self.reg_segments = [ParserMTS.Part1()]
+        self.reg_segments = [ParserOnePlus9.Part1()]
+
+
+class ParserMP4(ClassWithTag, ParserWithRegexSegments):
+    tag = 'video'
+
+    class Part1(ParserWithRegexSegments):
+        def __init__(self):
+            super().__init__(None)
+            self.reg_segments = [YearMonthDayParser(), '_', TimeParser()]
+
+        def _process_string(self, string, result):
+            pass
+
+    def __init__(self, file_extension='mp4'):
+        super().__init__(file_extension)
+        self.reg_segments = [ParserMP4.Part1()]

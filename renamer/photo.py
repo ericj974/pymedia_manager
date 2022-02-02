@@ -22,9 +22,9 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
         self.timedelta_max = timedelta_max
 
     @classmethod
-    def generate_renamer(cls, config, file_extension):
+    def generate_renamer(cls, config, file_extensions):
         parser = MetaParser.generate_parser(config=config.parser,
-                                            file_extension=file_extension)
+                                            file_extensions=file_extensions)
         return RenamerPhoto(parser=parser)
 
     # Build the list of files based on this renamer rules

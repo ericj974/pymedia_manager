@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import sys
 from functools import partial
@@ -13,6 +14,24 @@ from model import MainModel
 from renamer import gui as renamer_ui
 from renamer.common import nameddic
 
+file_extension_photo = ['jpg', 'jpeg']
+file_extension_video = [
+    'AVI',
+    'avi',
+    'MTS',
+    'mts',
+    'MP4',
+    'mp4',
+    'mov',
+    'MOV',
+    'WMV',
+    'wmv'
+]
+
+file_extensions_per_tag = {
+    'photo' : file_extension_photo,
+    'video' : file_extension_video
+}
 
 class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
     def __init__(self, create_backup, delete_duplicate, model: MainModel, controller: MainController):
@@ -41,7 +60,9 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
         for tag, parsers in repo_parsers.items():
             # if for such tag there is a specific renamer, then ok
             if tag in repo_renamers: continue
+        # Parsers repo in dic format: tag -> list_of_parsers
         self.repo_parsers = repo_parsers
+        # Renamers repo in dic format: tag -> list of renamers
         self.repo_renamers = repo_renamers
 
         # Need to keep track of the filter checkboxes
@@ -199,12 +220,13 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
         tag = self.comboBox_tags.currentText()
         renamer_generator = self.repo_renamers[tag][0]
 
-        print('############### LISTING FILES ###############')
+        logging.info('Listing Files...')
         config = nameddic()
         config.parser = nameddic()
         config.parser.parser_cls_list = self.repo_parsers[tag]
 
-        renamer = renamer_generator.generate_renamer(config=config, file_extension='jpg')
+        renamer = renamer_generator.generate_renamer(config=config,
+                                                     file_extensions=file_extensions_per_tag[tag])
         results_parsing = renamer.try_parse_build_filename(folderpath_or_list_filenames=dirpath)
 
         self.results = results_parsing

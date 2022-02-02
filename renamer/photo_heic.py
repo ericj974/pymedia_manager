@@ -13,7 +13,7 @@ class ConverterPhotoHeic(ClassWithTag, RenamerWithParser):
         RenamerWithParser.__init__(self, parser=ParserHEIC())
 
     @classmethod
-    def generate_renamer(cls, config, file_extension):
+    def generate_renamer(cls, config, file_extensions):
         return ConverterPhotoHeic()
 
     # Build the list of files based on this renamer rules

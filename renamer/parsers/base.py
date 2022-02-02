@@ -26,7 +26,7 @@ class ResultParser(nameddic):
 class IParser(object):
 
     @classmethod
-    def generate_parser(cls, config, file_extension):
+    def generate_parser(cls, config, file_extensions):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -90,12 +90,13 @@ class MetaParser(IParser):
         self.parser_list = []
 
     @classmethod
-    def generate_parser(cls, config, file_extension):
+    def generate_parser(cls, config, file_extensions):
         # Get all the parsers under such name
         parser_cls_list = config.parser_cls_list
 
         obj = cls()
-        obj.parser_list = [parser_cls(file_extension) for parser_cls in parser_cls_list]
+        obj.parser_list = [parser_cls(file_extension) for parser_cls in parser_cls_list
+                           for file_extension in file_extensions]
         return obj
 
     # TODO: Add a hierarchy notion especially for aprooximate search

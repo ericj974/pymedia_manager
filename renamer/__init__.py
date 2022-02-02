@@ -59,7 +59,7 @@ class ResultsRenaming(nameddic):
 class IRenamer(object):
 
     @classmethod
-    def generate_renamer(cls, config, file_extension):
+    def generate_renamer(cls, config, file_extensions):
         raise NotImplementedError
 
     # return a dic filename -> parsing_result in a nameddic format
@@ -164,9 +164,9 @@ class RenamerWithParser(IRenamer):
         self.config.builder = nameddic()
 
     @classmethod
-    def generate_renamer(cls, config, file_extension):
+    def generate_renamer(cls, config, file_extensions):
         parser = MetaParser.generate_parser(config=config.parser,
-                                            file_extension=file_extension)
+                                            file_extensions=file_extensions)
 
         return RenamerWithParser(parser=parser)
 

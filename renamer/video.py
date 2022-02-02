@@ -5,11 +5,11 @@ from datetime import datetime
 import utils
 from renamer import ClassWithTag, RenamerWithParser, ResultsRenaming, Result
 from renamer.common.status import StatusPhoto
-from renamer.parsers.base import ResultParser
+from renamer.parsers.base import ResultParser, MetaParser
 from renamer.parsers.video import ParserMTS
 from thirdparty import exiftool
 
-file_extensions = {
+file_extensions_video_out = {
     'AVI': 'avi',
     'avi': 'avi',
     'MTS': 'MTS',
@@ -26,12 +26,14 @@ file_extensions = {
 class RenamerVideo(ClassWithTag, RenamerWithParser):
     tag = 'video'
 
-    def __init__(self):
-        RenamerWithParser.__init__(self, parser=ParserMTS())
+    def __init__(self, parser):
+        RenamerWithParser.__init__(self, parser=parser)
 
     @classmethod
-    def generate_renamer(cls, config, file_extension):
-        return RenamerVideo()
+    def generate_renamer(cls, config, file_extensions):
+        parser = MetaParser.generate_parser(config=config.parser,
+                                            file_extensions=file_extensions)
+        return RenamerVideo(parser=parser)
 
     # Build the list of files based on this renamer rules
     def try_parse_build_filename(self, folderpath_or_list_filenames):
@@ -50,7 +52,7 @@ class RenamerVideo(ClassWithTag, RenamerWithParser):
             file_extension_case = file_extension_case[1:]
 
             # Skip if not MTS
-            if file_extension_case not in file_extensions: continue
+            if file_extension_case not in file_extensions_video_out: continue
 
             # Datetime from exif
             try:
@@ -103,7 +105,7 @@ class RenamerVideo(ClassWithTag, RenamerWithParser):
 
         filename_no_ext, file_extension_case = os.path.splitext(filename_in)
         file_extension_case = file_extension_case[1:]
-        file_extension = file_extensions[file_extension_case]
+        file_extension = file_extensions_video_out[file_extension_case]
 
         datetime_from_exif = parser_result_dic.datetime_from_exif
         datetime_from_filename = parser_result_dic.datetime_from_filename
