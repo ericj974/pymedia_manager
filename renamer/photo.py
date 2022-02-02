@@ -10,6 +10,8 @@ import renamer.parsers.base
 import utils
 from renamer import parsers, ClassWithTag, RenamerWithParser, MetaParser, ResultsRenaming, Result
 from renamer.common.status import StatusPhoto
+from renamer.parsers import FILE_EXTENSION_PHOTO
+from thirdparty import exiftool
 
 
 class RenamerPhoto(ClassWithTag, RenamerWithParser):
@@ -17,7 +19,7 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
 
     def __init__(self,
                  parser,
-                 timedelta_max=datetime.timedelta(seconds=5)):
+                 timedelta_max=datetime.timedelta(seconds=60)):
         RenamerWithParser.__init__(self, parser=parser)
         self.timedelta_max = timedelta_max
 
@@ -38,48 +40,48 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
         else:
             generator = folderpath_or_list_filenames
 
-        for file in generator:
-            filename, file_extension_case = os.path.splitext(file)
-            file_extension = file_extension_case[1:].lower()
-            filename = os.path.basename(filename)
-            filename_case = filename
-            filename += '.' + file_extension
-            filename_case += '.' + file_extension_case[1:]
+        with exiftool.ExifTool() as et:
+            for file in generator:
+                filename_src = os.path.basename(file)
+                filename_no_ext, file_extension_case = os.path.splitext(filename_src)
+                file_extension_case = file_extension_case[1:]
 
-            # Get the exif if possible
-            try:
-                exif = utils.get_exif(filepath=file)
-                datetime_from_exif = utils.get_datetime(exif)
-            except:
-                datetime_from_exif = None
+                # Skip if not the right extension
+                if file_extension_case not in FILE_EXTENSION_PHOTO: continue
 
-            # Pattern matching from filename
-            datetime_from_filename = None
-            result_parser = renamer.parsers.base.ResultParser()
-            if self.parser.try_match(filename, result_parser, do_search_first=False):
-                datetime_from_filename = result_parser.DateTimeOriginal
+                # Datetime from exif
+                try:
+                    exif = et.get_metadata(file)
+                    datetime_from_exif = utils.get_datetime_exiftool(exif)
+                except:
+                    datetime_from_exif = None
 
-            result_parser.datetime_from_exif = datetime_from_exif
-            result_parser.datetime_from_filename = datetime_from_filename
+                # Datetime from filename
+                datetime_from_filename = None
+                result_parser = renamer.parsers.base.ResultParser()
+                if self.parser.try_match(filename_src, result_parser, do_search_first=False):
+                    datetime_from_filename = result_parser.DateTimeOriginal
 
-            # Update status
-            status = StatusPhoto.not_ok
-            if datetime_from_exif:
-                status = StatusPhoto.exif_only
-                if datetime_from_filename:
-                    status = StatusPhoto.ok
-            elif datetime_from_filename:
-                status = StatusPhoto.filename_exact_only
+                result_parser.datetime_from_exif = datetime_from_exif
+                result_parser.datetime_from_filename = datetime_from_filename
 
-            filename_src = filename_case
-            filename_dst, status_out = self.build_filename(filename_src, result_parser)
-            results[filename_case] = Result(dirpath=os.path.dirname(file),
-                                            filename_src=filename_src,
-                                            filename_dst=filename_dst,
-                                            status=status_out)
+                # Update status
+                status = StatusPhoto.not_ok
+                if datetime_from_exif:
+                    status = StatusPhoto.exif_only
+                    if datetime_from_filename:
+                        status = StatusPhoto.ok
+                elif datetime_from_filename:
+                    status = StatusPhoto.filename_exact_only
 
-            print(filename_src + '|' + str(datetime_from_exif) + '|' + str(datetime_from_filename) + '|' + str(
-                datetime_from_filename) + '|')
+                filename_dst, status_out = self.build_filename(filename_src, result_parser)
+                results[filename_src] = Result(dirpath=os.path.dirname(file),
+                                                filename_src=filename_src,
+                                                filename_dst=filename_dst,
+                                                status=status_out)
+
+                print(filename_src + '|' + str(datetime_from_exif) + '|' + str(datetime_from_filename) + '|' + str(
+                    datetime_from_filename) + '|')
 
         return results
 

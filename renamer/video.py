@@ -5,22 +5,10 @@ from datetime import datetime
 import utils
 from renamer import ClassWithTag, RenamerWithParser, ResultsRenaming, Result
 from renamer.common.status import StatusPhoto
+from renamer.parsers import FILE_EXTENSION_VIDEO
 from renamer.parsers.base import ResultParser, MetaParser
 from renamer.parsers.video import ParserMTS
 from thirdparty import exiftool
-
-file_extensions_video_out = {
-    'AVI': 'avi',
-    'avi': 'avi',
-    'MTS': 'MTS',
-    'mts': 'MTS',
-    'MP4': 'mp4',
-    'mp4': 'mp4',
-    'mov': 'mov',
-    'MOV': 'mov',
-    'WMV': 'wmv',
-    'wmv': 'wmv'
-}
 
 
 class RenamerVideo(ClassWithTag, RenamerWithParser):
@@ -46,38 +34,38 @@ class RenamerVideo(ClassWithTag, RenamerWithParser):
         else:
             generator = folderpath_or_list_filenames
 
-        for file in generator:
-            filename_src = os.path.basename(file)
-            filename_no_ext, file_extension_case = os.path.splitext(file)
-            file_extension_case = file_extension_case[1:]
+        with exiftool.ExifTool() as et:
+            for file in generator:
+                filename_src = os.path.basename(file)
+                filename_no_ext, file_extension_case = os.path.splitext(filename_src)
+                file_extension_case = file_extension_case[1:]
 
-            # Skip if not MTS
-            if file_extension_case not in file_extensions_video_out: continue
+                # Skip if not the right extension
+                if file_extension_case not in FILE_EXTENSION_VIDEO: continue
 
-            # Datetime from exif
-            try:
-                with exiftool.ExifTool() as et:
+                # Datetime from exif
+                try:
                     exif = et.get_metadata(file)
                     datetime_from_exif = utils.get_datetime_exiftool(exif)
-            except:
-                datetime_from_exif = None
+                except:
+                    datetime_from_exif = None
 
-            # Pattern matching from filename
-            datetime_from_filename = None
-            result_parser = ResultParser()
-            if self.parser.try_match(filename_no_ext, result_parser, do_search_first=False):
-                datetime_from_filename = result_parser.DateTimeOriginal
+                # Datetime from filename
+                datetime_from_filename = None
+                result_parser = ResultParser()
+                if self.parser.try_match(filename_src, result_parser, do_search_first=False):
+                    datetime_from_filename = result_parser.DateTimeOriginal
 
-            result_parser.datetime_from_exif = datetime_from_exif
-            result_parser.datetime_from_filename = datetime_from_filename
+                result_parser.datetime_from_exif = datetime_from_exif
+                result_parser.datetime_from_filename = datetime_from_filename
 
-            filename_dst, status_out = self.build_filename(filename_src, result_parser)
-            results[filename_src] = Result(dirpath=os.path.dirname(file),
-                                           filename_src=filename_src,
-                                           filename_dst=filename_dst,
-                                           status=status_out)
+                filename_dst, status_out = self.build_filename(filename_src, result_parser)
+                results[filename_src] = Result(dirpath=os.path.dirname(file),
+                                               filename_src=filename_src,
+                                               filename_dst=filename_dst,
+                                               status=status_out)
 
-            print(filename_src + '|' + filename_dst + '|')
+                print(filename_src + '|' + filename_dst + '|')
 
         return results
 
@@ -105,7 +93,7 @@ class RenamerVideo(ClassWithTag, RenamerWithParser):
 
         filename_no_ext, file_extension_case = os.path.splitext(filename_in)
         file_extension_case = file_extension_case[1:]
-        file_extension = file_extensions_video_out[file_extension_case]
+        file_extension = file_extension_case.lower()
 
         datetime_from_exif = parser_result_dic.datetime_from_exif
         datetime_from_filename = parser_result_dic.datetime_from_filename

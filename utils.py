@@ -74,19 +74,40 @@ def print_exif(exif):
             pass
 
 
-def get_datetime(exif):
-    if piexif.ExifIFD.DateTimeOriginal in exif['Exif']:
-        return datetime.datetime.strptime(exif['Exif'][piexif.ExifIFD.DateTimeOriginal].decode("utf-8"),
-                                          '%Y:%m:%d %H:%M:%S')
-    elif piexif.ExifIFD.DateTimeDigitized in exif['Exif']:
-        return datetime.datetime.strptime(exif['Exif'][piexif.ExifIFD.DateTimeDigitized].decode("utf-8"),
-                                          '%Y:%m:%d %H:%M:%S')
-    elif piexif.ImageIFD.DateTime in exif['0th']:
-        return datetime.datetime.strptime(exif['0th'][piexif.ImageIFD.DateTime].decode("utf-8"),
-                                          '%Y:%m:%d %H:%M:%S')
-
+# def get_datetime(exif):
+#     t = None
+#     if piexif.ExifIFD.DateTimeOriginal in exif['Exif']:
+#         t =  datetime.datetime.strptime(exif['Exif'][piexif.ExifIFD.DateTimeOriginal].decode("utf-8"),
+#                                           '%Y:%m:%d %H:%M:%S')
+#     elif piexif.ExifIFD.DateTimeDigitized in exif['Exif']:
+#         t =  datetime.datetime.strptime(exif['Exif'][piexif.ExifIFD.DateTimeDigitized].decode("utf-8"),
+#                                           '%Y:%m:%d %H:%M:%S')
+#     elif piexif.ImageIFD.DateTime in exif['0th']:
+#         t = datetime.datetime.strptime(exif['0th'][piexif.ImageIFD.DateTime].decode("utf-8"),
+#                                           '%Y:%m:%d %H:%M:%S')
+#
+#     return t
 
 def get_datetime_exiftool(exif):
+    def correct_time_jpg_from_gps(t, exif):
+        if 'EXIF:GPSLatitude' in exif and 'EXIF:GPSLongitude' in exif:
+            lat = exif['EXIF:GPSLatitude']
+            lat = -lat if (exif['EXIF:GPSLatitudeRef'] == 'S') else lat
+            lng = exif['EXIF:GPSLongitude']
+            lng = -lng if (exif['EXIF:GPSLongitudeRef'] == 'W') else lng
+            timezone_str = TZWHERE.tzNameAt(lat, lng)  # coordinates
+            timezone = pytz.timezone(timezone_str)
+            return t + timezone.utcoffset(t)
+
+        # No gps coords. We will compare 'File:FileModifyDate' to t
+        file_modify_datetime = datetime.datetime.strptime(exif['File:FileModifyDate'], '%Y:%m:%d %H:%M:%S%z')
+        delta_with_t = t - (file_modify_datetime.replace(tzinfo=None) - file_modify_datetime.utcoffset())
+        if delta_with_t.total_seconds() < 60.0:
+            return file_modify_datetime.replace(tzinfo=None)
+
+        # Here we
+        raise NotImplementedError()
+
     def correct_time_quicktime_from_gps(t, exif):
         key = 'QuickTime:GPSCoordinates'
 
@@ -94,7 +115,7 @@ def get_datetime_exiftool(exif):
         if key in exif:
             lat, lng = exif[key].split(" ")
             lat, lng = float(lat), float(lng)
-            timezone_str = TZWHERE.tzNameAt(lat, lng)  # Seville coordinates
+            timezone_str = TZWHERE.tzNameAt(lat, lng)  # coordinates
             timezone = pytz.timezone(timezone_str)
             return t + timezone.utcoffset(t)
 

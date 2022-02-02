@@ -15,7 +15,7 @@ class RegPic1(ClassWithTag, ParserWithRegexSegments):
 class RegPic2(ClassWithTag, ParserWithRegexSegments):
     tag = 'photo'
 
-    def __init__(self, ext=None):
+    def __init__(self, ext):
         super(RegPic2, self).__init__(ext)
         self.reg_segments = [YearMonthDayParser(), '_', TimeParser()]
         if ext is not None:
@@ -25,7 +25,7 @@ class RegPic2(ClassWithTag, ParserWithRegexSegments):
 class RegPic3(ClassWithTag, ParserWithRegexSegments):
     tag = 'photo'
 
-    def __init__(self, ext=None):
+    def __init__(self, ext):
         super(RegPic3, self).__init__(ext)
         self.reg_segments = ['IMG_', YearMonthDayParser(), '_', TimeParser(), '_HDR']
         if ext is not None:
@@ -35,7 +35,7 @@ class RegPic3(ClassWithTag, ParserWithRegexSegments):
 class RegPic4(ClassWithTag, ParserWithRegexSegments):
     tag = 'photo'
 
-    def __init__(self, ext=None):
+    def __init__(self, ext):
         super(RegPic4, self).__init__(ext)
         self.reg_segments = [YearMonthDayParser(), '_', TimeParser(), '_HDR']
         if ext is not None:
@@ -45,7 +45,7 @@ class RegPic4(ClassWithTag, ParserWithRegexSegments):
 class RegPic5(ClassWithTag, ParserWithRegexSegments):
     tag = 'photo'
 
-    def __init__(self, ext=None):
+    def __init__(self, ext):
         super(RegPic5, self).__init__(ext)
         self.reg_segments = ['Office Lens ', YearMonthDayParser(), '-', TimeParser()]
         if ext is not None:

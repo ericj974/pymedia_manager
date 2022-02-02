@@ -11,6 +11,18 @@ sub_modules = []
 
 REPO_PARSERS = MyRepo()
 
+# Photo extensions allowed
+FILE_EXTENSION_PHOTO = ['jpg', 'jpeg']
+FILE_EXTENSION_PHOTO.extend([extension.upper() for extension in FILE_EXTENSION_PHOTO])
+
+# Photo heif extension allowed
+FILE_EXTENSION_PHOTO_HEIF = ['heic']
+FILE_EXTENSION_PHOTO_HEIF.extend([extension.upper() for extension in FILE_EXTENSION_PHOTO_HEIF])
+
+# Video extension allowed
+FILE_EXTENSION_VIDEO = ['avi', 'mts', 'mp4', 'mov', 'wmv']
+FILE_EXTENSION_VIDEO.extend([extension.upper() for extension in FILE_EXTENSION_VIDEO])
+
 
 # Load the plugins in the current module
 def load_plugins(parent_module_name=''):

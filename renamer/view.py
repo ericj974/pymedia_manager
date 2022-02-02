@@ -13,24 +13,12 @@ from controller import MainController
 from model import MainModel
 from renamer import gui as renamer_ui
 from renamer.common import nameddic
-
-file_extension_photo = ['jpg', 'jpeg']
-file_extension_video = [
-    'AVI',
-    'avi',
-    'MTS',
-    'mts',
-    'MP4',
-    'mp4',
-    'mov',
-    'MOV',
-    'WMV',
-    'wmv'
-]
+from renamer.parsers import FILE_EXTENSION_PHOTO_HEIF, FILE_EXTENSION_PHOTO, FILE_EXTENSION_VIDEO
 
 file_extensions_per_tag = {
-    'photo' : file_extension_photo,
-    'video' : file_extension_video
+    'photo_heic': FILE_EXTENSION_PHOTO_HEIF,
+    'photo': FILE_EXTENSION_PHOTO,
+    'video': FILE_EXTENSION_VIDEO
 }
 
 class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):

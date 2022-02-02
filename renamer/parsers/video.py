@@ -17,7 +17,7 @@ class ParserMTS(ClassWithTag, ParserWithRegexSegments):
 
     def __init__(self, file_extension='MTS'):
         super().__init__(file_extension)
-        self.reg_segments = [ParserMTS.Part1()]
+        self.reg_segments = [ParserMTS.Part1(), '.' + file_extension]
 
 
 class ParserOnePlus9(ClassWithTag, ParserWithRegexSegments):
@@ -33,7 +33,7 @@ class ParserOnePlus9(ClassWithTag, ParserWithRegexSegments):
 
     def __init__(self, file_extension='mp4'):
         super().__init__(file_extension)
-        self.reg_segments = [ParserOnePlus9.Part1()]
+        self.reg_segments = [ParserOnePlus9.Part1(), '.' + file_extension]
 
 
 class ParserMP4(ClassWithTag, ParserWithRegexSegments):
@@ -49,4 +49,4 @@ class ParserMP4(ClassWithTag, ParserWithRegexSegments):
 
     def __init__(self, file_extension='mp4'):
         super().__init__(file_extension)
-        self.reg_segments = [ParserMP4.Part1()]
+        self.reg_segments = [ParserMP4.Part1(), '.' + file_extension]
