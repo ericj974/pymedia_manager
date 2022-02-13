@@ -376,7 +376,7 @@ class PhotoEditorWindow(QMainWindow):
 
     def adjustScrollBar(self, scroll_bar, factor):
         """Adjust the scrollbar when zooming in or out."""
-        scroll_bar.setValue(int(factor * scroll_bar.value()) + ((factor - 1) * scroll_bar.pageStep() / 2))
+        scroll_bar.setValue(int(factor * scroll_bar.value() + ((factor - 1) * scroll_bar.pageStep() / 2)))
 
     def aboutDialog(self):
         QMessageBox.about(self, "About Photo Editor",

@@ -4,6 +4,7 @@ from PyQt5.QtCore import QFileSystemWatcher
 from send2trash import send2trash
 
 from model import MainModel
+from renamer.parsers import ALL_FILE_EXTENSIONS, FILE_EXTENSION_PHOTO
 
 
 class MainController:
@@ -29,7 +30,7 @@ class MainController:
 
         # List content of the folder
         files = [os.path.join(dirpath, file) for file in os.listdir(dirpath)]
-        files = sorted([f for f in files if os.path.isfile(f) and f.endswith(".jpg") or f.endswith(".JPG")])
+        files = sorted([f for f in files if os.path.isfile(f) and os.path.splitext(f)[1][1:] in FILE_EXTENSION_PHOTO])
 
         if dirpath != self._model.dirpath:  # Actual change of dirpath
             dirpath_old = self._model.dirpath
@@ -38,11 +39,28 @@ class MainController:
                 self._watcher.removePaths(self._watcher.directories())
                 self._watcher.addPath(dirpath)
         else:  # Update of the content
-            intersec = set(self._model.files).intersection(files)
-            if len(files) - len(intersec) > 0:  # We have new files or renamed file(s)
+            _set_model_files = set(self._model.files)
+            _set_files = set(files)
+
+            #
+            new_files = _set_files.difference(_set_model_files)
+            deleted_files = _set_model_files.difference(_set_files)
+
+            # TODO: Give more granulatiry to this and handle the addition of files event
+            if len(new_files)> 0:  # We have new files or renamed file(s)
                 self._model.files = files
-            elif len(self._model.files) - len(intersec):  # Files have been deleted
-                self._model.files = files
+            if len(deleted_files) > 0:  # Files have been deleted
+                if self._model._imagepath in deleted_files:
+                    _old_files = self._model.files
+                    idx = _old_files.index(self._model.imagepath)
+                    while _old_files[idx] in deleted_files and idx > 0:
+                        idx = (idx + 1) % len(self._model.files)
+                    # Select the first image in the current list that is still
+                    self._model.files = files
+                    imagepath = _old_files[idx] if _old_files[idx] in files else files[0]
+                    self.set_imagepath(imagepath)
+                else:
+                    self._model.files = files
 
     def set_imagepath(self, imagepath: str):
         if os.path.isfile(imagepath) and self._model.imagepath != imagepath:
@@ -73,6 +91,7 @@ class MainController:
         # This signal is emitted when the file at the specified path is modified, renamed or removed from disk.
         if os.path.exists(filepath):
             if filepath not in self._watcher.files():  # Current file renamed ?
+                # We remove all the files that we're watching. Normally one only
                 self._watcher.removePaths(self._watcher.files())
                 self._watcher.addPath(filepath)
             else:

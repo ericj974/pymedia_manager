@@ -23,6 +23,7 @@ FILE_EXTENSION_PHOTO_HEIF.extend([extension.upper() for extension in FILE_EXTENS
 FILE_EXTENSION_VIDEO = ['avi', 'mts', 'mp4', 'mov', 'wmv']
 FILE_EXTENSION_VIDEO.extend([extension.upper() for extension in FILE_EXTENSION_VIDEO])
 
+ALL_FILE_EXTENSIONS = FILE_EXTENSION_PHOTO + FILE_EXTENSION_PHOTO_HEIF + FILE_EXTENSION_VIDEO
 
 # Load the plugins in the current module
 def load_plugins(parent_module_name=''):
