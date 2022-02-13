@@ -1,0 +1,13 @@
+__pycache__
+*/__pycache__
+
+*.swp
+
+trial.py
+docs/build
+
+dist/*
+
+.idea
+.python-version
+venv

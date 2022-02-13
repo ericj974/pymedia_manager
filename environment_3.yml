@@ -8,7 +8,7 @@ dependencies:
   - opencv
   - pillow
   - pyqt
-  - pyqtwebengine
+  - pyqtwebengine # bro
   - piexif
   - send2trash
   - tzwhere # this is to correct utc to correct timezone in case of QuickTime videos
@@ -16,6 +16,3 @@ dependencies:
   - pip
   - pip:
       - pyheif
-#      - pyqt5-tools # TO have QTDesigner. But conflict right now with conda version of pyqt
-#      - PyQtWebEngine
-#      - deepface

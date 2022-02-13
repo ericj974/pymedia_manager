@@ -43,6 +43,10 @@ class PhotoEditorWindow(QMainWindow):
         self.showMaximized()
         self.setStatusBar(QStatusBar())
 
+        # Open selected image
+        if self._model.imagepath:
+            self.openImage(file=self._model.imagepath)
+
     @pyqtSlot(str)
     def on_imagepath_changed(self, imagepath):
         self.openImage(file=imagepath)

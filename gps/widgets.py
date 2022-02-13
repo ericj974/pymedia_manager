@@ -1,8 +1,8 @@
 from PyQt5.QtWebEngineCore import QWebEngineUrlRequestInterceptor
 from PyQt5.QtWidgets import QTableWidgetItem
 
-from pyqtlet.pyqtlet import MapWidget
-from pyqtlet.pyqtlet.leaflet.control import Draw
+from thirdparty.pyqtlet.pyqtlet import MapWidget
+from thirdparty.pyqtlet.pyqtlet.leaflet.control import Draw
 
 
 class MyDraw(Draw):

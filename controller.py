@@ -4,7 +4,7 @@ from PyQt5.QtCore import QFileSystemWatcher
 from send2trash import send2trash
 
 from model import MainModel
-from renamer.parsers import ALL_FILE_EXTENSIONS, FILE_EXTENSION_PHOTO
+from renamer.parsers import FILE_EXTENSION_PHOTO
 
 
 class MainController:
@@ -46,8 +46,8 @@ class MainController:
             new_files = _set_files.difference(_set_model_files)
             deleted_files = _set_model_files.difference(_set_files)
 
-            # TODO: Give more granulatiry to this and handle the addition of files event
-            if len(new_files)> 0:  # We have new files or renamed file(s)
+            # TODO: Give more granularity to this and handle the addition of files event
+            if len(new_files) > 0:  # We have new files or renamed file(s)
                 self._model.files = files
             if len(deleted_files) > 0:  # Files have been deleted
                 if self._model._imagepath in deleted_files:
