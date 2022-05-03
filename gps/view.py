@@ -270,7 +270,7 @@ class MainGPSWindow(QMainWindow):
 
         # generator = glob.iglob(os.path.join(dirpath, "*.jpg"))
         for file in self._model.files:
-            exif = utils.get_exif(file)
+            exif = utils.get_exif_v2(file)
             if not exif:
                 self.exif_dic[file] = None
             else:

@@ -6,7 +6,6 @@ import numpy as np
 import piexif
 import piexif.helper
 import pytz
-from PIL import Image
 from tzwhere import tzwhere
 
 user_comment_template = {
@@ -18,22 +17,15 @@ user_comment_template = {
 TZWHERE = tzwhere.tzwhere()
 
 
-# cf https://www.blog.pythonlibrary.org/2010/03/28/getting-photo-metadata-exif-using-python/
-def get_exif(filepath):
-    assert os.path.exists(filepath), 'File ' + filepath + 'does not exist'
-    image = Image.open(filepath)
-    try:
-        exif_dict = piexif.load(image.info["exif"])
-    except KeyError:
-        print(f"Cannot find exif for image {filepath}")
-        return None
-    return exif_dict
-
-
 def get_exif_v2(filepath):
     assert os.path.exists(filepath), 'File ' + filepath + 'does not exist'
     try:
         exif_dict = piexif.load(filepath)
+        # See bug https://github.com/hMatoba/Piexif/issues/95
+        try:
+            del exif_dict['Exif'][piexif.ExifIFD.SceneType]
+        except:
+            pass
     except KeyError:
         print(f"Cannot find exif for image {filepath}")
         return None
@@ -45,7 +37,10 @@ def get_exif_user_comment(filepath):
     if piexif.ExifIFD.UserComment in exif_dict["Exif"]:
         user_comment = piexif.helper.UserComment.load(exif_dict["Exif"][piexif.ExifIFD.UserComment])
         # Deserialize
-        return json.loads(user_comment)
+        try:
+            return json.loads(user_comment)
+        except json.decoder.JSONDecodeError as e:
+            return user_comment_template.copy()
     return user_comment_template.copy()
 
 
@@ -73,20 +68,6 @@ def print_exif(exif):
         except:
             pass
 
-
-# def get_datetime(exif):
-#     t = None
-#     if piexif.ExifIFD.DateTimeOriginal in exif['Exif']:
-#         t =  datetime.datetime.strptime(exif['Exif'][piexif.ExifIFD.DateTimeOriginal].decode("utf-8"),
-#                                           '%Y:%m:%d %H:%M:%S')
-#     elif piexif.ExifIFD.DateTimeDigitized in exif['Exif']:
-#         t =  datetime.datetime.strptime(exif['Exif'][piexif.ExifIFD.DateTimeDigitized].decode("utf-8"),
-#                                           '%Y:%m:%d %H:%M:%S')
-#     elif piexif.ImageIFD.DateTime in exif['0th']:
-#         t = datetime.datetime.strptime(exif['0th'][piexif.ImageIFD.DateTime].decode("utf-8"),
-#                                           '%Y:%m:%d %H:%M:%S')
-#
-#     return t
 
 def get_datetime_exiftool(exif):
     def correct_time_jpg_from_gps(t, exif):

@@ -117,7 +117,7 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
     def _write_datetime_to_exif(self, filepath, datetime_new):
         print('Load image ' + filepath + ' ...')
         try:
-            exif_dict = utils.get_exif(filepath)
+            exif_dict = utils.get_exif_v2(filepath)
             exif_dict["0th"][piexif.ImageIFD.DateTime] = datetime.datetime.strftime(datetime_new, '%Y:%m:%d %H:%M:%S')
         except KeyError:
             o = io.BytesIO()
