@@ -35,11 +35,10 @@ def get_exif_v2(filepath):
 def get_exif_user_comment(filepath):
     exif_dict = get_exif_v2(filepath)
     if piexif.ExifIFD.UserComment in exif_dict["Exif"]:
-        user_comment = piexif.helper.UserComment.load(exif_dict["Exif"][piexif.ExifIFD.UserComment])
-        # Deserialize
         try:
+            user_comment = piexif.helper.UserComment.load(exif_dict["Exif"][piexif.ExifIFD.UserComment])
             return json.loads(user_comment)
-        except json.decoder.JSONDecodeError as e:
+        except:
             return user_comment_template.copy()
     return user_comment_template.copy()
 
