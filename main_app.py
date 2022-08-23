@@ -6,7 +6,7 @@ from controller import MainController
 from mainview.view import PhotoManagementView
 from model import MainModel
 
-__appname__ = 'PhotoManagement'
+__appname__ = 'MediaManager'
 
 
 class MyApp(QApplication):
