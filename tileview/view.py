@@ -211,16 +211,3 @@ class MainTileWindow(QtWidgets.QMainWindow):
             item.widget().scaledToWidth(win_size.width() / self.max_col)
 
 
-if __name__ == '__main__':
-    import sys
-
-    app = QtWidgets.QApplication(sys.argv)
-    model = MainModel()
-    controller = MainController(model=model)
-    w = MainTileWindow(controller=controller, model=model)
-    # w.set_dirpath('/home/ericj/Pictures/20200306-20200310 Indonesia_Bandung')
-    # w.set_dirpath('/home/ericj/Pictures/test/')
-    w.show()
-    model.dirpath = '/home/ericj/Pictures/test/'
-    model.imagepath = '/home/ericj/Pictures/test/20190626_224734.jpg'
-    sys.exit(app.exec_())

@@ -393,7 +393,6 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     app.setAttribute(Qt.AA_DontShowIconsInMenus, True)
-    # app.setStyleSheet(style_sheet)
     model = MainModel()
     controller = MainController(model=model)
     window = MainGPSWindow(model=model, controller=controller)
