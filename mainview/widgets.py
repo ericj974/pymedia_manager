@@ -46,10 +46,3 @@ class FileExplorerWidget(QWidget):
         idx = self.dirModel.setRootPath(parentpath)
         self.treeview.setRootIndex(idx)
         self.listview.setRootIndex(self.fileModel.setRootPath(dirpath))
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    w = FileExplorerWidget()
-    w.show()
-    sys.exit(app.exec_())

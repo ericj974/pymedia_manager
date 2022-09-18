@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.*
+  - python=3.* #  - libstdcxx-ng # Bug fix for "Cannot load `swrast` and `iris` drivers"
   - numpy
   - opencv
   - pillow

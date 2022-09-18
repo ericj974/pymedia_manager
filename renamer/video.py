@@ -7,7 +7,6 @@ from renamer import ClassWithTag, RenamerWithParser, ResultsRenaming, Result
 from renamer.common.status import StatusPhoto
 from renamer.parsers import FILE_EXTENSION_VIDEO
 from renamer.parsers.base import ResultParser, MetaParser
-from renamer.parsers.video import ParserMTS
 from thirdparty import exiftool
 
 

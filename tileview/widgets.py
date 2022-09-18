@@ -203,6 +203,8 @@ class ImageWidget(QtWidgets.QLabel):
     def set_file(self, file):
         if os.path.exists(file) and os.path.isfile(file):
             self.file = file
-            self.orig_pixmap = QtGui.QPixmap(file).scaledToWidth(TILES_THUMBNAIL_SIZE)
+            qimage, _ = utils.load_image(self.file)
+            self.orig_pixmap = QtGui.QPixmap().fromImage(qimage).scaledToWidth(TILES_THUMBNAIL_SIZE)
+            # QtGui.QPixmap(file).scaledToWidth(TILES_THUMBNAIL_SIZE)
             if not self.orig_pixmap.isNull():
                 self.setPixmap(self.orig_pixmap)

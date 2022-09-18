@@ -84,7 +84,7 @@ except NameError:
 if sys.platform == 'win32':
     DEFAULT_EXECUTABLE = "exiftool.exe"
 else:
-    DEFAULT_EXECUTABLE = "thirdparty/Image-ExifTool-12.33/exiftool"
+    DEFAULT_EXECUTABLE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Image-ExifTool-12.33', 'exiftool')
 """The name of the executable to run.
 
 If the executable is not located in one of the paths listed in the

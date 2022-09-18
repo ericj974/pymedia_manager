@@ -1,5 +1,4 @@
 import os
-import sys
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QSize, pyqtSlot
@@ -415,15 +414,3 @@ class PhotoEditorWindow(QMainWindow):
 
     def closeEvent(self, event):
         pass
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setAttribute(Qt.AA_DontShowIconsInMenus, True)
-    # app.setStyleSheet(style_sheet)
-    model = MainModel()
-    controller = MainController(model=model)
-    window = PhotoEditorWindow(model=model, controller=controller)
-    window.show()
-    controller.set_imagepath('/home/ericj/Pictures/20200306-20200310 Indonesia_Bandung/20200306_122311.jpg')
-    sys.exit(app.exec_())

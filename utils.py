@@ -3,9 +3,12 @@ import json
 import os
 
 import numpy as np
+from PIL import Image
 import piexif
 import piexif.helper
 import pytz
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QImage, QTransform
 from tzwhere import tzwhere
 
 user_comment_template = {
@@ -215,3 +218,40 @@ def deg_to_mercator(lng, lat):
     y = 180.0 / np.pi * np.log(np.tan(np.pi / 4.0 +
                                       lat * (np.pi / 180.0) / 2.0)) * scale
     return (x, y)
+
+
+def load_image(file):
+    """
+    Load an image and rotate if orientation exif tag
+    """
+    # This step is necessary to load the exif
+    try:
+        img = Image.open(file)
+        qimage = QImage(file)
+    except:
+        return None, None
+
+    # exif data.
+    exif_dict = piexif.load(img.info['exif']) if 'exif' in img.info else {}
+    # Remove orientation metadata
+    if piexif.ImageIFD.Orientation in exif_dict["0th"]:
+        orientation = exif_dict["0th"].pop(piexif.ImageIFD.Orientation)
+        transforms = []
+        if orientation == 2: # Flip left / right
+            transforms = [QTransform().scale(1, -1)]
+        elif orientation == 3: # rotate 180
+            transforms = [QTransform().rotate(180)]
+        elif orientation == 4:
+            transforms = [QTransform().rotate(180), QTransform().scale(1, -1)]
+        elif orientation == 5:
+            transforms = [QTransform().rotate(90), QTransform().scale(1, -1)]
+        elif orientation == 6:
+            transforms = [QTransform().rotate(90)]
+        elif orientation == 7:
+            transforms = [QTransform().rotate(-90), QTransform().scale(1, -1)]
+        elif orientation == 8:
+            transforms = [QTransform().rotate(-90)]
+
+        for t in transforms:
+            qimage = qimage.transformed(t, mode=Qt.SmoothTransformation)
+    return qimage, exif_dict

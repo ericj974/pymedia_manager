@@ -35,6 +35,7 @@ class MainGPSWindow(QMainWindow):
     def __init__(self, model: MainModel, controller: MainController):
         super(self.__class__, self).__init__()
         self.setWindowTitle("GPS View")
+
         # MVC model
         self._model = model
         self._controller = controller
@@ -386,17 +387,3 @@ class MainGPSWindow(QMainWindow):
             self.gps_table.item(i, 2).setText(str(lnglat_dic['lat']))
 
 
-if __name__ == "__main__":
-    import logging
-
-    logging.basicConfig(level=logging.DEBUG)
-
-    app = QApplication(sys.argv)
-    app.setAttribute(Qt.AA_DontShowIconsInMenus, True)
-    model = MainModel()
-    controller = MainController(model=model)
-    window = MainGPSWindow(model=model, controller=controller)
-    window.set_dirpath('/home/ericj/Pictures/20200306-20200310 Indonesia_Bandung')
-    window.show()
-    # window.openImage('/home/ericj/Pictures/20200306-20200310 Indonesia_Bandung/20200306_122311.jpg')
-    sys.exit(app.exec_())

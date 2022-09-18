@@ -1,19 +1,22 @@
-import os
 import argparse
-import numpy as np
-import cv2
+import os
 
-from PIL import Image
+import cv2
+import numpy as np
+
+import resources
 
 COLOR_DIC = {
-    'red' : (165,39,20),
-    'green': (15,157,88)
+    'red': (165, 39, 20),
+    'green': (15, 157, 88)
 }
 
 # Main arguments that can override the config file parameters
-argparser = argparse.ArgumentParser(description='Convert a white BG and black foreground into desired color')
-argparser.add_argument('--input', '-i', help='Input file', type=str, default='/home/ericj/Downloads/coffeeshop.png')
-argparser.add_argument('--color', help='Output color', type=str, default='red')
+argparser = argparse.ArgumentParser(description='Convert a BW image (white BG and black foreground) into desired color')
+argparser.add_argument('--input', '-i', help='Input file', type=str,
+                       default=os.path.join(os.path.dirname(os.path.abspath(resources.__file__)), 'foodcourt.png'))
+argparser.add_argument('--color', help='Output color (red, green)', type=str, default='red')
+
 
 def main(file, color):
     # read and convert file
@@ -21,7 +24,7 @@ def main(file, color):
 
     # BGR
     img = cv2.imread(file)
-    img =  cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     rgb = COLOR_DIC[color]
     thresh = 150
     img_out = np.stack([(img <= thresh)*rgb[2], (img <= thresh)*rgb[1], (img <= thresh)*rgb[0], (img <= thresh)*255], axis=2)
@@ -34,6 +37,7 @@ def main(file, color):
     if os.path.exists(file_out):
         os.remove(file_out)
     cv2.imwrite(file_out, img_out)
+
 
 if __name__ == '__main__':
     args = argparser.parse_args()

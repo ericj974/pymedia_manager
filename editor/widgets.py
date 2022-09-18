@@ -5,6 +5,8 @@ from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtGui import QImage, QPixmap, QTransform, QColor, qRgb, QPalette, QKeySequence
 from PyQt5.QtWidgets import QLabel, QRubberBand, QSizePolicy, QShortcut
 
+import utils
+
 
 class State:
     normal = "normal"
@@ -40,20 +42,13 @@ class ImageLabel(QLabel):
         self.cancel_sc.activated.connect(self.revertToOriginal)
 
     def load_image(self, file):
-        # This step is necessary to load the exif
-        image = Image.open(file)
-        self.qimage = ImageQt.ImageQt(image)
+        self.qimage, self.exif_dict = utils.load_image(file)
         if self.qimage.isNull():
             return
         pixmap = QPixmap().fromImage(self.qimage)
         self.setPixmap(pixmap)
         # Keep a copy of the image
         self.original_image = self.qimage.copy()
-        # exif data.
-        self.exif_dict = piexif.load(image.info['exif']) if 'exif' in image.info else {}
-        # Remove orientation metadata
-        if piexif.ImageIFD.Orientation in self.exif_dict["0th"]:
-            self.exif_dict["0th"].pop(piexif.ImageIFD.Orientation)
 
     def save(self, imagepath):
         try:
@@ -63,6 +58,7 @@ class ImageLabel(QLabel):
         if 'thumbnail' in self.exif_dict:
             del self.exif_dict['thumbnail']
         exif_bytes = piexif.dump(self.exif_dict)
+        # Need to use ImageQt to save metadata
         ImageQt.fromqimage(self.qimage).save(imagepath, exif=exif_bytes, optimize=True, quality=95)
 
     def clearImage(self):
