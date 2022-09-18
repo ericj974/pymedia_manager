@@ -51,6 +51,9 @@ class ImageLabel(QLabel):
         self.original_image = self.qimage.copy()
         # exif data.
         self.exif_dict = piexif.load(image.info['exif']) if 'exif' in image.info else {}
+        # Remove orientation metadata
+        if piexif.ImageIFD.Orientation in self.exif_dict["0th"]:
+            self.exif_dict["0th"].pop(piexif.ImageIFD.Orientation)
 
     def save(self, imagepath):
         try:

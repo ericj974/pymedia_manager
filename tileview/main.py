@@ -17,8 +17,9 @@ def main(argv=[]):
     model = MainModel()
     controller = MainController(model=model)
     window = MainTileWindow(controller=controller, model=model)
-    window.set_dirpath('/home/ericj/Pictures/test/')
-    model.imagepath = '/home/ericj/Pictures/test/20210908_122743.jpg'
+    controller.update_dirpath('/home/ericj/Pictures/test/')
+    #controller.set_imagepath('/home/ericj/Pictures/test/20210908_122743.jpg')
+    # model.imagepath = '/home/ericj/Pictures/test/20210908_122743.jpg'
     window.show()
     app.exec_()
 
