@@ -18,11 +18,11 @@ class MyApp(QApplication):
         self.main_view.show()
 
 
-def main(argv=[]):
+def main():
     # Launch the UI
     app = MyApp(sys.argv)  # A new instance of QApplication
-    app.exec_()
+    sys.exit(app.exec_())
 
 
-if __name__ == '__main__':  # if we're running file directly and not importing it
-    sys.exit(main(sys.argv))  # run the main function
+if __name__ == '__main__':
+    main()

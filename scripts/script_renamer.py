@@ -9,7 +9,6 @@ import renamer
 from controller import MainController
 from model import MainModel
 from renamer.view import MainRenamerWindow
-
 # Parse the basic argument first
 from resources import test_pics
 
@@ -68,5 +67,5 @@ def main():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':  # if we're running file directly and not importing it
-    main()  # run the main function
+if __name__ == '__main__':
+    main()
