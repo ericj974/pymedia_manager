@@ -234,7 +234,7 @@ def load_image(file):
     # exif data.
     exif_dict = piexif.load(img.info['exif']) if 'exif' in img.info else {}
     # Remove orientation metadata
-    if piexif.ImageIFD.Orientation in exif_dict["0th"]:
+    if "0th" in exif_dict and piexif.ImageIFD.Orientation in exif_dict["0th"]:
         orientation = exif_dict["0th"].pop(piexif.ImageIFD.Orientation)
         transforms = []
         if orientation == 2: # Flip left / right

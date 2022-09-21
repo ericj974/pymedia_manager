@@ -105,7 +105,7 @@ class ImageLabel(QLabel):
             ymin = rect.y() / self.height() * self.qimage.height()
             width = rect.width() / self.width() * self.qimage.width()
             height = rect.height() / self.height() * self.qimage.height()
-            rect_img = QRect(xmin, ymin, width, height)
+            rect_img = QRect(int(xmin), int(ymin), int(width), int(height))
             original_image = self.qimage
             cropped = original_image.copy(rect_img)
             self.qimage = QImage(cropped)
