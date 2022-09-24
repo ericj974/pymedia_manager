@@ -14,7 +14,7 @@
             <bool>true</bool>
         </property>
         <property name="windowTitle">
-            <string>Photo Management</string>
+            <string>Media Management</string>
         </property>
         <widget class="QWidget" name="centralwidget">
             <property name="sizePolicy">

@@ -208,3 +208,29 @@ class ImageWidget(QtWidgets.QLabel):
             # QtGui.QPixmap(file).scaledToWidth(TILES_THUMBNAIL_SIZE)
             if not self.orig_pixmap.isNull():
                 self.setPixmap(self.orig_pixmap)
+
+
+class VideoWidget(QtWidgets.QLabel):
+    doubleClicked = pyqtSignal(str)
+
+    def __init__(self, file):
+        super(VideoWidget, self).__init__()
+        self.setAttribute(Qt.WA_DeleteOnClose, True)
+        self.setObjectName(file)
+        self.file = ''
+        self.orig_pixmap = None
+        self.set_file(file)
+
+    def mouseDoubleClickEvent(self, e):
+        self.doubleClicked.emit(self.file)
+
+    def scaledToWidth(self, width):
+        pixmap = self.orig_pixmap.scaledToWidth(int(width))
+        self.setPixmap(pixmap)
+
+    def set_file(self, file):
+        if os.path.exists(file) and os.path.isfile(file):
+            self.file = file
+            self.orig_pixmap = QtGui.QPixmap(file).scaledToWidth(TILES_THUMBNAIL_SIZE)
+            if not self.orig_pixmap.isNull():
+                self.setPixmap(self.orig_pixmap)

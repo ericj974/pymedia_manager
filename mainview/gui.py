@@ -56,7 +56,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Photo Management"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Media Management"))
         self.pushButton_renamer.setText(_translate("MainWindow", "Renamer"))
         self.pushButton_editor.setText(_translate("MainWindow", "Editor"))
         self.pushButton_tileview.setText(_translate("MainWindow", "Tile View"))
