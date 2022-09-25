@@ -11,7 +11,7 @@ from renamer.view import MainRenamerWindow
 from tileview.view import MainTileWindow
 
 
-class PhotoManagementView(QMainWindow, gui.Ui_MainWindow):
+class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
     def __init__(self, model: MainModel, controller: MainController):
         super(self.__class__, self).__init__()

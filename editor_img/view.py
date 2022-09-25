@@ -36,7 +36,6 @@ class PhotoEditorWindow(QMainWindow):
         # listen for model event
         # Model Event - selected image has changed
         self._model.selected_media_changed.connect(self.on_media_path_changed)
-        #
 
         self.setMinimumSize(300, 200)
         self.setWindowTitle("Photo Editor")
@@ -45,11 +44,17 @@ class PhotoEditorWindow(QMainWindow):
 
         # Open selected image
         if self._model.media_path:
-            self.open_image(file=self._model.media_path)
+            ext = os.path.splitext(self._model.media_path)[1][1:]
+            if ext in FILE_EXTENSION_PHOTO_JPG:
+                self.open_media(file=self._model.media_path)
+            else:
+                self.image_label.reset_image()
+                self.setEnabled(False)
+
 
     @pyqtSlot(str)
     def on_media_path_changed(self, path):
-        self.open_image(file=path)
+        self.open_media(file=path)
         self.show()
 
     def createActionsShortcuts(self):
@@ -66,7 +71,7 @@ class PhotoEditorWindow(QMainWindow):
 
         self.open_act = QAction(QIcon(os.path.join(icon_path, "open.png")), 'Open...', self)
         self.open_act.setShortcut('Ctrl+O')
-        self.open_act.triggered.connect(self.open_image)
+        self.open_act.triggered.connect(self.open_media)
 
         self.print_act = QAction(QIcon(os.path.join(icon_path, "print.png")), "Print...", self)
         self.print_act.setShortcut('Ctrl+P')
@@ -294,7 +299,13 @@ class PhotoEditorWindow(QMainWindow):
     def _detect_faces(self):
         pass
 
-    def open_image(self, file=""):
+    def open_media(self, file=""):
+        """Load a new image into the """
+        if file == "":
+            file, _ = QFileDialog.getOpenFileName(self, "Open Image",
+                                                  "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
+                    GIF Files (*.gif)")
+
         # Deactivate the editor_img if not an image
         ext = os.path.splitext(file)[1][1:]
         if ext not in FILE_EXTENSION_PHOTO_JPG:
@@ -302,12 +313,6 @@ class PhotoEditorWindow(QMainWindow):
             self.setEnabled(False)
             return
         self.setEnabled(True)
-
-        """Load a new image into the """
-        if file == "":
-            file, _ = QFileDialog.getOpenFileName(self, "Open Image",
-                                                  "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
-                    GIF Files (*.gif)")
 
         if file:
             self.image_label.load_image(file)
