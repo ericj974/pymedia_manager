@@ -5,7 +5,7 @@ class MainModel(QObject):
     # Change of directory path
     selected_dir_changed = pyqtSignal(str)
     # Change of selected picture file
-    selected_image_changed = pyqtSignal(str)
+    selected_media_changed = pyqtSignal(str)
     # Change of directory path
     selected_dir_content_changed = pyqtSignal(str)
     # Change of the content of the selected image (maybe it has been modified
@@ -13,29 +13,29 @@ class MainModel(QObject):
 
     def __init__(self):
         super(MainModel, self).__init__()
-        self._dirpath = ""
-        self._imagepath = ""
+        self._dir_path = ""
+        self._media_path = ""
         self._files = []
 
     @property
     def dirpath(self):
-        return self._dirpath
+        return self._dir_path
 
     @dirpath.setter
     def dirpath(self, value):
         dirpath, files = value
-        self._dirpath = dirpath
+        self._dir_path = dirpath
         self._files = files
         self.selected_dir_changed.emit(dirpath)
 
     @property
-    def imagepath(self):
-        return self._imagepath
+    def media_path(self):
+        return self._media_path
 
-    @imagepath.setter
-    def imagepath(self, file):
-        self._imagepath = file
-        self.selected_image_changed.emit(file)
+    @media_path.setter
+    def media_path(self, file):
+        self._media_path = file
+        self.selected_media_changed.emit(file)
 
     @property
     def files(self):
@@ -52,4 +52,4 @@ class MainModel(QObject):
             self.selected_dir_content_changed.emit(self.dirpath)
 
     def update_selected_file_content(self):
-        self.selected_file_content_changed.emit(self.imagepath)
+        self.selected_file_content_changed.emit(self.media_path)

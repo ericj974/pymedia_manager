@@ -41,10 +41,13 @@ class ImageLabel(QLabel):
         self.cancel_sc = QShortcut(QKeySequence('Ctrl+Z'), self)
         self.cancel_sc.activated.connect(self.revertToOriginal)
 
+    def reset_image(self):
+        self.qimage = QImage()
+        self.setPixmap(QPixmap())
+        self.original_image = self.qimage.copy()
+
     def load_image(self, file):
         self.qimage, self.exif_dict = utils.load_image(file)
-        if self.qimage.isNull():
-            return
         pixmap = QPixmap().fromImage(self.qimage)
         self.setPixmap(pixmap)
         # Keep a copy of the image

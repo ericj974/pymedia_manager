@@ -10,7 +10,7 @@ import renamer.parsers.base
 import utils
 from renamer import parsers, ClassWithTag, RenamerWithParser, MetaParser, ResultsRenaming, Result
 from renamer.common.status import StatusPhoto
-from renamer.parsers import FILE_EXTENSION_PHOTO
+from renamer.parsers import FILE_EXTENSION_PHOTO_JPG
 from thirdparty import exiftool
 
 
@@ -47,7 +47,7 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
                 file_extension_case = file_extension_case[1:]
 
                 # Skip if not the right extension
-                if file_extension_case not in FILE_EXTENSION_PHOTO: continue
+                if file_extension_case not in FILE_EXTENSION_PHOTO_JPG: continue
 
                 # Datetime from exif
                 try:

@@ -11,11 +11,11 @@ from controller import MainController
 from model import MainModel
 from renamer import gui as renamer_ui
 from renamer.common import nameddic
-from renamer.parsers import FILE_EXTENSION_PHOTO_HEIF, FILE_EXTENSION_PHOTO, FILE_EXTENSION_VIDEO
+from renamer.parsers import FILE_EXTENSION_PHOTO_HEIF, FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_VIDEO
 
 file_extensions_per_tag = {
     'photo_heic': FILE_EXTENSION_PHOTO_HEIF,
-    'photo': FILE_EXTENSION_PHOTO,
+    'photo': FILE_EXTENSION_PHOTO_JPG,
     'video': FILE_EXTENSION_VIDEO
 }
 
@@ -228,7 +228,7 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
     def on_table_double_clicked(self, index):
         row = index.row()
         file = self.table_result.item(row, 0).file
-        self._controller.set_imagepath(file)
+        self._controller.set_media_path(file)
 
     # Change the name
     def rename_list(self):

@@ -2,14 +2,15 @@ import os
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QSize, pyqtSlot
-from PyQt5.QtGui import QIcon, QPalette, QWheelEvent
+from PyQt5.QtGui import QIcon, QPalette, QWheelEvent, QPixmap, QImage
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction,
                              QSlider, QToolButton, QToolBar, QDockWidget, QMessageBox, QGridLayout,
                              QScrollArea, QStatusBar, QFileDialog, QShortcut)
 
 from controller import MainController
-from editor.widgets import ImageLabel, State
+from editor_img.widgets import ImageLabel, State
 from model import MainModel
+from renamer.parsers import FILE_EXTENSION_PHOTO_JPG
 
 icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons")
 
@@ -34,7 +35,7 @@ class PhotoEditorWindow(QMainWindow):
         self.setAttribute(Qt.WA_DeleteOnClose, True)
         # listen for model event
         # Model Event - selected image has changed
-        self._model.selected_image_changed.connect(self.on_imagepath_changed)
+        self._model.selected_media_changed.connect(self.on_media_path_changed)
         #
 
         self.setMinimumSize(300, 200)
@@ -43,12 +44,12 @@ class PhotoEditorWindow(QMainWindow):
         self.setStatusBar(QStatusBar())
 
         # Open selected image
-        if self._model.imagepath:
-            self.openImage(file=self._model.imagepath)
+        if self._model.media_path:
+            self.open_image(file=self._model.media_path)
 
     @pyqtSlot(str)
-    def on_imagepath_changed(self, imagepath):
-        self.openImage(file=imagepath)
+    def on_media_path_changed(self, path):
+        self.open_image(file=path)
         self.show()
 
     def createActionsShortcuts(self):
@@ -65,7 +66,7 @@ class PhotoEditorWindow(QMainWindow):
 
         self.open_act = QAction(QIcon(os.path.join(icon_path, "open.png")), 'Open...', self)
         self.open_act.setShortcut('Ctrl+O')
-        self.open_act.triggered.connect(self.openImage)
+        self.open_act.triggered.connect(self.open_image)
 
         self.print_act = QAction(QIcon(os.path.join(icon_path, "print.png")), "Print...", self)
         self.print_act.setShortcut('Ctrl+P')
@@ -122,7 +123,7 @@ class PhotoEditorWindow(QMainWindow):
 
         self.normal_size_act = QAction("Normal Size", self)
         self.normal_size_act.setShortcut('Ctrl+=')
-        self.normal_size_act.triggered.connect(self.normalSize)
+        self.normal_size_act.triggered.connect(self._normal_size)
         self.normal_size_act.setEnabled(False)
 
         self.fit_to_window_act = QAction("&Fit to Window", self)
@@ -136,9 +137,9 @@ class PhotoEditorWindow(QMainWindow):
         self.detect_faces_act.triggered.connect(self._detect_faces)
 
         # And the shortcuts
-        QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_image)
-        QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_image)
-        QShortcut(QtCore.Qt.Key.Key_Delete, self, self._controller.delete_cur_image)
+        QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_media)
+        QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_media)
+        QShortcut(QtCore.Qt.Key.Key_Delete, self, self._controller.delete_cur_media)
 
     def createMenus(self):
         """Set up the menubar."""
@@ -293,7 +294,15 @@ class PhotoEditorWindow(QMainWindow):
     def _detect_faces(self):
         pass
 
-    def openImage(self, file=""):
+    def open_image(self, file=""):
+        # Deactivate the editor_img if not an image
+        ext = os.path.splitext(file)[1][1:]
+        if ext not in FILE_EXTENSION_PHOTO_JPG:
+            self.image_label.reset_image()
+            self.setEnabled(False)
+            return
+        self.setEnabled(True)
+
         """Load a new image into the """
         if file == "":
             file, _ = QFileDialog.getOpenFileName(self, "Open Image",
@@ -330,7 +339,7 @@ class PhotoEditorWindow(QMainWindow):
                                                         "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
                     GIF Files (*.gif)")
 
-            if image_file and self.image_label.qimage.isNull() == False:
+            if image_file and not self.image_label.qimage.isNull():
                 self.image_label.qimage.save(image_file)
             else:
                 QMessageBox.information(self, "Error",
@@ -342,7 +351,7 @@ class PhotoEditorWindow(QMainWindow):
     def save_image(self):
         """Save the image displayed in the label."""
         if not self.image_label.qimage.isNull():
-            self.image_label.save(self._model.imagepath)
+            self.image_label.save(self._model.media_path)
         else:
             QMessageBox.information(self, "Empty Image",
                                     "There is no image to save.", QMessageBox.Ok)
@@ -358,7 +367,7 @@ class PhotoEditorWindow(QMainWindow):
         self.zoom_in_act.setEnabled(self.cumul_scale_factor < 4.0)
         self.zoom_out_act.setEnabled(self.cumul_scale_factor > 0.333)
 
-    def normalSize(self):
+    def _normal_size(self):
         """View image with its normal dimensions."""
         self.image_label.adjustSize()
         self.cumul_scale_factor = 1.0
@@ -367,7 +376,7 @@ class PhotoEditorWindow(QMainWindow):
         fitToWindow = self.fit_to_window_act.isChecked()
         # self.scroll_area.setWidgetResizable(fitToWindow)
         if not fitToWindow:
-            self.normalSize()
+            self._normal_size()
         else:
             if not self.image_label.pixmap().isNull():
                 w, h = self.scroll_area.width(), self.scroll_area.height()

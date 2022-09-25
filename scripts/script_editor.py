@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication
 
 import resources.test_pics as test_pics
 from controller import MainController
-from editor.view import PhotoEditorWindow
+from editor_img.view import PhotoEditorWindow
 from model import MainModel
 
 argparser = argparse.ArgumentParser(description='Display tile view for images inside the specified folder')
@@ -41,7 +41,7 @@ def main():
     window.show()
 
     # Set image path
-    controller.set_imagepath(path)
+    controller.set_media_path(path)
 
     sys.exit(app.exec_())
 

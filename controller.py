@@ -4,7 +4,7 @@ from PyQt5.QtCore import QFileSystemWatcher
 from send2trash import send2trash
 
 from model import MainModel
-from renamer.parsers import FILE_EXTENSION_PHOTO
+from renamer.parsers import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_MEDIA
 
 
 class MainController:
@@ -30,7 +30,7 @@ class MainController:
 
         # List content of the folder
         files = [os.path.join(dirpath, file) for file in os.listdir(dirpath)]
-        files = sorted([f for f in files if os.path.isfile(f) and os.path.splitext(f)[1][1:] in FILE_EXTENSION_PHOTO])
+        files = sorted([f for f in files if os.path.isfile(f) and os.path.splitext(f)[1][1:] in FILE_EXTENSION_MEDIA])
 
         if dirpath != self._model.dirpath:  # Actual change of dirpath
             dirpath_old = self._model.dirpath
@@ -50,39 +50,39 @@ class MainController:
             if len(new_files) > 0:  # We have new files or renamed file(s)
                 self._model.files = files
             if len(deleted_files) > 0:  # Files have been deleted
-                if self._model._imagepath in deleted_files:
+                if self._model._media_path in deleted_files:
                     _old_files = self._model.files
-                    idx = _old_files.index(self._model.imagepath)
+                    idx = _old_files.index(self._model.media_path)
                     while _old_files[idx] in deleted_files and idx > 0:
                         idx = (idx + 1) % len(self._model.files)
                     # Select the first image in the current list that is still
                     self._model.files = files
-                    imagepath = _old_files[idx] if _old_files[idx] in files else files[0]
-                    self.set_imagepath(imagepath)
+                    path = _old_files[idx] if _old_files[idx] in files else files[0]
+                    self.set_media_path(path)
                 else:
                     self._model.files = files
 
-    def set_imagepath(self, imagepath: str):
-        if os.path.isfile(imagepath) and self._model.imagepath != imagepath:
+    def set_media_path(self, path: str):
+        if os.path.isfile(path) and self._model.media_path != path:
             self._watcher.removePaths(self._watcher.files())
-            self._watcher.addPath(imagepath)
-            self._model.imagepath = imagepath
+            self._watcher.addPath(path)
+            self._model.media_path = path
 
-    def select_next_image(self):
-        idx = self._model.files.index(self._model.imagepath)
+    def select_next_media(self):
+        idx = self._model.files.index(self._model.media_path)
         idx = (idx + 1) % len(self._model.files)
-        imagepath = self._model.files[idx]
-        self.set_imagepath(imagepath)
+        path = self._model.files[idx]
+        self.set_media_path(path)
 
-    def select_prev_image(self):
-        idx = self._model.files.index(self._model.imagepath)
+    def select_prev_media(self):
+        idx = self._model.files.index(self._model.media_path)
         idx = (idx - 1) % len(self._model.files)
-        imagepath = self._model.files[idx]
-        self.set_imagepath(imagepath)
+        path = self._model.files[idx]
+        self.set_media_path(path)
 
-    def delete_cur_image(self):
-        file_to_delete = self._model.imagepath
-        self.select_next_image()
+    def delete_cur_media(self):
+        file_to_delete = self._model.media_path
+        self.select_next_media()
         send2trash(file_to_delete)
         self._model.remove_file_from_list(file_to_delete)
 

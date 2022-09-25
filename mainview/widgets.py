@@ -22,7 +22,7 @@ class FileExplorerWidget(QWidget):
 
         self.fileModel = QFileSystemModel()
         self.fileModel.setFilter(QDir.NoDotAndDotDot | QDir.Files)
-        self.fileModel.setNameFilters(["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.heic"])
+        self.fileModel.setNameFilters(["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.heic", '*.mp4'])
 
         self.treeview.setModel(self.dirModel)
         self.listview.setModel(self.fileModel)

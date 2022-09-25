@@ -1,4 +1,5 @@
 import copy
+import os
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
@@ -9,7 +10,8 @@ from PyQt5.QtWidgets import QStatusBar, QHBoxLayout, QAction
 import utils
 from controller import MainController
 from model import MainModel
-from tileview.widgets import UserCommentWidget, ImageWidget
+from renamer.parsers import FILE_EXTENSION_PHOTO, FILE_EXTENSION_VIDEO
+from tileview.widgets import UserCommentWidget, ImageWidget, VideoWidget
 
 
 class MainTileWindow(QtWidgets.QMainWindow):
@@ -24,7 +26,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
         # listen for model event signals
         self._model.selected_dir_changed.connect(self.on_dirpath_changed)
-        self._model.selected_image_changed.connect(self.on_selected_image_changed)
+        self._model.selected_media_changed.connect(self.on_selected_image_changed)
         self._model.selected_dir_content_changed.connect(self.on_watcher_dir_changed)
         self._model.selected_file_content_changed.connect(self.on_watcher_file_changed)
 
@@ -36,7 +38,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
         # List of file to process (widget creation and placement)
         self._files_to_process = None
         # Path -> widget dict
-        self.image_widgets = {}
+        self.media_widgets = {}
 
         # Tiles widget
         self.scrollArea = QtWidgets.QScrollArea(widgetResizable=True)
@@ -93,10 +95,10 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self._timer.stop()
         self.col_idx = 0
         self.row_idx = 0
-        for widget in self.image_widgets.values():
+        for widget in self.media_widgets.values():
             self._layout.removeWidget(widget)
             widget.close()
-        self.image_widgets = {}
+        self.media_widgets = {}
 
     def set_dirpath(self, dirpath):
         if dirpath == '':
@@ -111,13 +113,13 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
         files_it = self._model.files
         key_to_del = []  # List of filepaths that dont exist anymore
-        for widget in self.image_widgets.values():
+        for widget in self.media_widgets.values():
             self._layout.removeWidget(widget)
             if widget.file not in files_it:
                 key_to_del.append(widget.file)
                 widget.close()
         for key in key_to_del:
-            del self.image_widgets[key]
+            del self.media_widgets[key]
 
         self.col_idx = 0
         self.row_idx = 0
@@ -138,9 +140,9 @@ class MainTileWindow(QtWidgets.QMainWindow):
         if filepath == '':
             return
         # Make sure we reload the selected filepath, in case the signal is emitted because the image has been modified
-        if filepath in self.image_widgets:
-            self.image_widgets[filepath].set_file(filepath)
-            self.image_widgets[filepath].scaledToWidth(self.scrollArea.size().width() / self.max_col)
+        if filepath in self.media_widgets:
+            self.media_widgets[filepath].set_file(filepath)
+            self.media_widgets[filepath].scaledToWidth(self.scrollArea.size().width() / self.max_col)
             # Scroll down to the selected image
             posy = self.scrollArea.findChild(QtWidgets.QLabel, filepath).pos().y()
             self.scrollArea.verticalScrollBar().setValue(posy)
@@ -153,11 +155,11 @@ class MainTileWindow(QtWidgets.QMainWindow):
     def on_timeout_process_next_file(self):
         try:
             file = self._files_to_process.pop(0)
-            self.add_image_widget(file)
+            self.add_media_widget(file)
         except IndexError:
             self._timer.stop()
             # Scroll down to the selected image
-            filepath = self._model.imagepath
+            filepath = self._model.media_path
             try:
                 posy = self.scrollArea.findChild(QtWidgets.QLabel, filepath).pos().y()
                 self.scrollArea.verticalScrollBar().setValue(posy)
@@ -166,8 +168,8 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
     @pyqtSlot(str)
     def on_watcher_file_changed(self, filepath):
-        self.image_widgets[filepath].set_file(filepath)
-        self.image_widgets[filepath].scaledToWidth(self.scrollArea.size().width() / self.max_col)
+        self.media_widgets[filepath].set_file(filepath)
+        self.media_widgets[filepath].scaledToWidth(self.scrollArea.size().width() / self.max_col)
         self.repaint()
 
     @pyqtSlot(str)
@@ -178,24 +180,28 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self._timer.stop()
         self.col_idx = 0
         self.row_idx = 0
-        for widget in self.image_widgets.values():
+        for widget in self.media_widgets.values():
             self._layout.removeWidget(widget)
             if delete_widget:
                 widget.close()
         if delete_widget:
-            self.image_widgets = {}
+            self.media_widgets = {}
 
-    def add_image_widget(self, file):
-        if file in self.image_widgets:
-            widget = self.image_widgets[file]
+    def add_media_widget(self, file):
+        if file in self.media_widgets:
+            widget = self.media_widgets[file]
         else:
-            widget = ImageWidget(file)
-            widget.doubleClicked.connect(self._controller.set_imagepath)
+            ext = os.path.splitext(file)[1][1:]
+            if ext in FILE_EXTENSION_PHOTO:
+                widget = ImageWidget(file)
+            elif ext in FILE_EXTENSION_VIDEO:
+                widget = VideoWidget(file)
+            widget.doubleClicked.connect(self._controller.set_media_path)
 
         if widget.orig_pixmap and not widget.orig_pixmap.isNull():
             widget.setAttribute(Qt.WA_DeleteOnClose, True)
             widget.scaledToWidth(self.scrollArea.size().width() / self.max_col)
-            self.image_widgets[file] = widget
+            self.media_widgets[file] = widget
             self._layout.addWidget(widget, self.row_idx, self.col_idx)
             self.col_idx = (self.col_idx + 1)
             if self.col_idx == self.max_col:

@@ -8,7 +8,8 @@ import piexif
 import piexif.helper
 import pytz
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QTransform
+from PyQt5.QtGui import QImage, QTransform, qRgb
+
 from tzwhere import tzwhere
 
 user_comment_template = {
@@ -229,7 +230,7 @@ def load_image(file):
         img = Image.open(file)
         qimage = QImage(file)
     except:
-        return None, None
+        return QImage(), None
 
     # exif data.
     exif_dict = piexif.load(img.info['exif']) if 'exif' in img.info else {}
@@ -255,3 +256,23 @@ def load_image(file):
         for t in transforms:
             qimage = qimage.transformed(t, mode=Qt.SmoothTransformation)
     return qimage, exif_dict
+
+gray_color_table = [qRgb(i, i, i) for i in range(256)]
+
+def toQImage(im, copy=False):
+    if im is None:
+        return QImage()
+
+    if im.dtype == np.uint8:
+        if len(im.shape) == 2:
+            qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_Indexed8)
+            qim.setColorTable(gray_color_table)
+            return qim.copy() if copy else qim
+
+        elif len(im.shape) == 3:
+            if im.shape[2] == 3:
+                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_RGB888);
+                return qim.copy() if copy else qim
+            elif im.shape[2] == 4:
+                qim = QImage(im.data, im.shape[1], im.shape[0], im.strides[0], QImage.Format_ARGB32);
+                return qim.copy() if copy else qim

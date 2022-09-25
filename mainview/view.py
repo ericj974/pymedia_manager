@@ -2,7 +2,7 @@ from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import *
 
 from controller import MainController
-from editor.view import PhotoEditorWindow
+from editor_img.view import PhotoEditorWindow
 from gps.view import MainGPSWindow
 from mainview import gui
 from model import MainModel
@@ -28,7 +28,7 @@ class PhotoManagementView(QMainWindow, gui.Ui_MainWindow):
 
         # listen for model event signals
         self._model.selected_dir_changed.connect(self.on_dirpath_changed)
-        self._model.selected_image_changed.connect(self.on_imagepath_changed)
+        self._model.selected_media_changed.connect(self.on_imagepath_changed)
 
         # update exif button
         self.options = nameddic()
@@ -110,7 +110,7 @@ class PhotoManagementView(QMainWindow, gui.Ui_MainWindow):
 
     def on_listview_doubleclick(self, event):
         self.launch_editor()
-        self._controller.set_imagepath(
+        self._controller.set_media_path(
             self.widget.fileModel.filePath(
                 self.widget.listview.selectionModel().selectedIndexes()[0]))
 

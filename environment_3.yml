@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - python=3.* #  - libstdcxx-ng # Bug fix for "Cannot load `swrast` and `iris` drivers"
+  - moviepy
   - numpy
   - opencv
   - pillow
