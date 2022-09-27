@@ -24,14 +24,25 @@ class VideoPlayerWindow(QMainWindow):
         self._model = model
         self._controller = controller
 
-        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-        videoWidget = QVideoWidget()
+        self.createMainLabel()
+        self.createActionsShortcuts()
+        self.createMenus()
+        self.show()
 
         self.setAttribute(Qt.WA_DeleteOnClose, True)
         # listen for model event
         # Model Event - selected image has changed
         self._model.selected_media_changed.connect(self.on_media_path_changed)
 
+        # Open selected video
+        if self._model.media_path:
+            ext = os.path.splitext(self._model.media_path)[1][1:]
+            if ext in FILE_EXTENSION_VIDEO:
+                self.open_media(file=self._model.media_path)
+            else:
+                self.setEnabled(False)
+
+    def createMainLabel(self):
         self.playButton = QPushButton()
         self.playButton.setEnabled(False)
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
@@ -45,24 +56,8 @@ class VideoPlayerWindow(QMainWindow):
         self.errorLabel.setSizePolicy(QSizePolicy.Preferred,
                                       QSizePolicy.Maximum)
 
-        # Create new action
-        openAction = QAction(QIcon('open.png'), '&Open', self)
-        openAction.setShortcut('Ctrl+O')
-        openAction.setStatusTip('Open movie')
-        openAction.triggered.connect(self.open_media)
-
-        # Create exit action
-        exitAction = QAction(QIcon('exit.png'), '&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip('Exit application')
-        exitAction.triggered.connect(self.exitCall)
-
-        # Create menu bar and add action
-        menuBar = self.menuBar()
-        fileMenu = menuBar.addMenu('&File')
-        # fileMenu.addAction(newAction)
-        fileMenu.addAction(openAction)
-        fileMenu.addAction(exitAction)
+        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+        videoWidget = QVideoWidget()
 
         # Create a widget for window contents
         wid = QWidget(self)
@@ -88,13 +83,26 @@ class VideoPlayerWindow(QMainWindow):
         self.mediaPlayer.durationChanged.connect(self.durationChanged)
         self.mediaPlayer.error.connect(self.handleError)
 
-        # Open selected image
-        if self._model.media_path:
-            ext = os.path.splitext(self._model.media_path)[1][1:]
-            if ext in FILE_EXTENSION_VIDEO:
-                self.open_media(file=self._model.media_path)
-            else:
-                self.setEnabled(False)
+    def createActionsShortcuts(self):
+        # Create new action
+        self.openAction = QAction(QIcon('open.png'), '&Open', self)
+        self.openAction.setShortcut('Ctrl+O')
+        self.openAction.setStatusTip('Open movie')
+        self.openAction.triggered.connect(self.open_media)
+
+        # Create exit action
+        self.exitAction = QAction(QIcon('exit.png'), '&Exit', self)
+        self.exitAction.setShortcut('Ctrl+Q')
+        self.exitAction.setStatusTip('Exit application')
+        self.exitAction.triggered.connect(self.exitCall)
+
+    def createMenus(self):
+        # Create menu bar and add action
+        menuBar = self.menuBar()
+        fileMenu = menuBar.addMenu('&File')
+        # fileMenu.addAction(newAction)
+        fileMenu.addAction(self.openAction)
+        fileMenu.addAction(self.exitAction)
 
     @pyqtSlot(str)
     def on_media_path_changed(self, path):

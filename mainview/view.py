@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import *
 
 from controller import MainController
 from editor_img.view import PhotoEditorWindow
+from editor_vid.view import VideoPlayerWindow
 from gps.view import MainGPSWindow
 from mainview import gui
 from model import MainModel
@@ -35,7 +36,8 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
         # Connect the buttons
         self.pushButton_renamer.clicked.connect(self.launch_renamer)
-        self.pushButton_editor.clicked.connect(self.launch_editor)
+        self.pushButton_editor_img.clicked.connect(self.launch_editor_img)
+        self.pushButton_editor_vid.clicked.connect(self.launch_editor_vid)
         self.pushButton_tileview.clicked.connect(self.launch_tile_view)
         self.pushButton_gps.clicked.connect(self.launch_gps_window)
 
@@ -68,12 +70,21 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.renamer_dialog.checked_all()
         self.renamer_dialog.show()
 
-    def launch_editor(self):
+    def launch_editor_img(self):
         def _on_destroyed():
             self.editor_window = None
 
         if not self.editor_window:
             self.editor_window = PhotoEditorWindow(model=self._model, controller=self._controller)
+            self.editor_window.destroyed.connect(_on_destroyed)
+        self.editor_window.show()
+
+    def launch_editor_vid(self):
+        def _on_destroyed():
+            self.editor_window = None
+
+        if not self.editor_window:
+            self.editor_window = VideoPlayerWindow(model=self._model, controller=self._controller)
             self.editor_window.destroyed.connect(_on_destroyed)
         self.editor_window.show()
 
@@ -109,7 +120,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
                 self.widget.treeview.selectionModel().selectedIndexes()[0]))
 
     def on_listview_doubleclick(self, event):
-        self.launch_editor()
+        self.launch_editor_img()
         self._controller.set_media_path(
             self.widget.fileModel.filePath(
                 self.widget.listview.selectionModel().selectedIndexes()[0]))
