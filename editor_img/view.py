@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction
 from controller import MainController
 from editor_img.widgets import ImageLabel, State
 from model import MainModel
-from renamer.parsers import FILE_EXTENSION_PHOTO_JPG
+from renamer.parsers import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
 
 icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons")
 
@@ -308,7 +308,7 @@ class PhotoEditorWindow(QMainWindow):
 
         # Deactivate the editor_img if not an image
         ext = os.path.splitext(file)[1][1:]
-        if ext not in FILE_EXTENSION_PHOTO_JPG:
+        if ext not in FILE_EXTENSION_PHOTO:
             self.image_label.reset_image()
             self.setEnabled(False)
             return

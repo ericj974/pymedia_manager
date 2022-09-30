@@ -227,7 +227,8 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
 
     def on_table_double_clicked(self, index):
         row = index.row()
-        file = self.table_result.item(row, 0).file
+        filename = self.table_result.item(row, 0).data(0)
+        file = os.path.join(self._model.dirpath, filename)
         self._controller.set_media_path(file)
 
     # Change the name
