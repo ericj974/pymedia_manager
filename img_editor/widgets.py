@@ -1,9 +1,11 @@
+from abc import ABC, abstractmethod
+
 import piexif
 from PIL import Image
 from PIL import ImageQt
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtGui import QImage, QPixmap, QTransform, QColor, qRgb, QPalette, QKeySequence
-from PyQt5.QtWidgets import QLabel, QRubberBand, QSizePolicy, QShortcut
+from PyQt5.QtWidgets import QLabel, QRubberBand, QSizePolicy, QShortcut, QWidget
 
 import utils
 
@@ -13,11 +15,32 @@ class State:
     crop = "crop"
 
 
-class ImageLabel(QLabel):
-    """Subclass of QLabel for displaying image"""
+class MediaWidget(QWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
+
+    @abstractmethod
+    def open_media(self, file, **kwargs):
+        """ Open the media """
+        pass
+
+    @abstractmethod
+    def save_media(self, file, **kwargs):
+        """ Save the media """
+        pass
+
+    @abstractmethod
+    def reset(self):
+        """ Reset to default / no media state """
+
+
+
+class ImageLabel(QLabel, MediaWidget):
+    """Subclass of QLabel for displaying image"""
+
+    def __init__(self, parent):
+        super(QLabel, self).__init__(parent)
         self.parent = parent
 
         self.qimage = QImage()
@@ -41,19 +64,20 @@ class ImageLabel(QLabel):
         self.cancel_sc = QShortcut(QKeySequence('Ctrl+Z'), self)
         self.cancel_sc.activated.connect(self.revertToOriginal)
 
-    def reset_image(self):
+    def reset(self):
         self.qimage = QImage()
         self.setPixmap(QPixmap())
         self.original_image = self.qimage.copy()
 
-    def load_image(self, file):
+
+    def open_media(self, file, **kwargs):
         self.qimage, self.exif_dict = utils.load_image(file)
         pixmap = QPixmap().fromImage(self.qimage)
         self.setPixmap(pixmap)
         # Keep a copy of the image
         self.original_image = self.qimage.copy()
 
-    def save(self, imagepath):
+    def save_media(self, file, **kwargs):
         try:
             self.exif_dict['Exif'][41729] = str(self.exif_dict['Exif'][41729]).encode("ascii")
         except:
@@ -62,7 +86,7 @@ class ImageLabel(QLabel):
             del self.exif_dict['thumbnail']
         exif_bytes = piexif.dump(self.exif_dict)
         # Need to use ImageQt to save metadata
-        ImageQt.fromqimage(self.qimage).save(imagepath, exif=exif_bytes, optimize=True, quality=95)
+        ImageQt.fromqimage(self.qimage).save(file, exif=exif_bytes, optimize=True, quality=95)
 
     def clearImage(self):
         """ """

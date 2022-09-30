@@ -1,12 +1,15 @@
+from functools import partial
+
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import *
 
 from controller import MainController
-from editor_img.view import PhotoEditorWindow
-from editor_vid.view import VideoPlayerWindow
+from img_editor.view import PhotoEditorWindow
+from clip_viewer.view import VideoPlayerWindow
 from gps.view import MainGPSWindow
 from mainview import gui
 from model import MainModel
+from nodes.node_manager import ClipNodeManager
 from renamer.common import nameddic
 from renamer.view import MainRenamerWindow
 from tileview.view import MainTileWindow
@@ -21,6 +24,9 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self._controller = controller
         self.setupUi(self)
 
+        # The action manager (performing edit actions)
+        self.action_manager = ClipNodeManager
+
         # connect widgets to controller
         self.__class__.dropEvent = self._controller.update_dirpath
 
@@ -29,15 +35,15 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
         # listen for model event signals
         self._model.selected_dir_changed.connect(self.on_dirpath_changed)
-        self._model.selected_media_changed.connect(self.on_imagepath_changed)
+        self._model.selected_media_changed.connect(self.on_media_changed)
 
         # update exif button
         self.options = nameddic()
 
         # Connect the buttons
         self.pushButton_renamer.clicked.connect(self.launch_renamer)
-        self.pushButton_editor_img.clicked.connect(self.launch_editor_img)
-        self.pushButton_editor_vid.clicked.connect(self.launch_editor_vid)
+        self.pushButton_editor_img.clicked.connect(partial(self.launch_editor_img, True))
+        self.pushButton_editor_vid.clicked.connect(partial(self.launch_editor_vid, True))
         self.pushButton_tileview.clicked.connect(self.launch_tile_view)
         self.pushButton_gps.clicked.connect(self.launch_gps_window)
 
@@ -71,21 +77,25 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.renamer_dialog.checked_all()
         self.renamer_dialog.show()
 
-    def launch_editor_img(self):
+    def launch_editor_img(self, force_show = False):
         def _on_destroyed():
             self.editor_img_window = None
 
         if not self.editor_img_window:
             self.editor_img_window = PhotoEditorWindow(model=self._model, controller=self._controller)
             self.editor_img_window.destroyed.connect(_on_destroyed)
+            if force_show:
+                self.editor_img_window.show()
 
-    def launch_editor_vid(self):
+    def launch_editor_vid(self, force_show = False):
         def _on_destroyed():
             self.editor_vid_window = None
 
         if not self.editor_vid_window:
             self.editor_vid_window = VideoPlayerWindow(model=self._model, controller=self._controller)
             self.editor_vid_window.destroyed.connect(_on_destroyed)
+            if force_show:
+                self.editor_vid_window.show()
 
     def launch_tile_view(self):
         def _on_destroyed():
@@ -130,7 +140,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.widget.set_dirpath(dirpath)
 
     @pyqtSlot(str)
-    def on_imagepath_changed(self, file):
+    def on_media_changed(self, file):
         if file == '':
             return
 

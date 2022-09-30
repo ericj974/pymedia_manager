@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import *
 
 import utils
 from controller import MainController
-from editor_img import widgets
+from img_editor import widgets
 from gps.widgets import MyDraw, MyMapWidget, MyQTableWidgetItem
 from model import MainModel
 from thirdparty.pyqtlet.pyqtlet import L
@@ -42,8 +42,7 @@ class MainGPSWindow(QMainWindow):
 
         # listen for model event signals
         self._model.selected_dir_changed.connect(self.on_dirpath_changed)
-        self._model.selected_media_changed.connect(self.on_imagepath_changed)
-        # self._model.selected_image_changed.connect(self.on_selected_image_changed)
+        self._model.selected_media_changed.connect(self.on_media_changed)
         self._model.selected_dir_content_changed.connect(self.on_dir_content_changed)
 
         # Main attributes
@@ -205,7 +204,7 @@ class MainGPSWindow(QMainWindow):
         self.set_dirpath(dirpath)
 
     @pyqtSlot(str)
-    def on_imagepath_changed(self, file):
+    def on_media_changed(self, file):
         if file == '':
             return
         # Center map on double cliked item
@@ -350,7 +349,7 @@ class MainGPSWindow(QMainWindow):
                 self.drawControl.featureGroup.addLayer(marker)
 
         # Activate a selected imagepath changed
-        self.on_imagepath_changed(self._model.media_path)
+        self.on_media_changed(self._model.media_path)
 
     def on_change_data_source(self, attr, old, new):
         pass

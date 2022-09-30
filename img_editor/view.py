@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction
                              QScrollArea, QStatusBar, QFileDialog, QShortcut)
 
 from controller import MainController
-from editor_img.widgets import ImageLabel, State
+from img_editor.widgets import ImageLabel, State
 from model import MainModel
 from renamer.parsers import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
 
@@ -48,7 +48,7 @@ class PhotoEditorWindow(QMainWindow):
             if ext in FILE_EXTENSION_PHOTO_JPG:
                 self.open_media(file=self._model.media_path)
             else:
-                self.image_label.reset_image()
+                self.media_widget.reset()
                 self.setEnabled(False)
 
 
@@ -81,41 +81,41 @@ class PhotoEditorWindow(QMainWindow):
 
         self.save_act = QAction(QIcon(os.path.join(icon_path, "save.png")), "Save...", self)
         self.save_act.setShortcut('Ctrl+S')
-        self.save_act.triggered.connect(self.save_image)
+        self.save_act.triggered.connect(self.save_media)
         self.save_act.setEnabled(False)
 
         self.save_as_act = QAction("Save As...", self)
         self.save_as_act.setShortcut('Ctrl+Shift+S')
-        self.save_as_act.triggered.connect(self.save_image_as)
+        self.save_as_act.triggered.connect(self.save_media_as)
         self.save_as_act.setEnabled(False)
 
         # Actions for Edit menu
         self.revert_act = QAction("Revert to Original", self)
-        self.revert_act.triggered.connect(self.image_label.revertToOriginal)
+        self.revert_act.triggered.connect(self.media_widget.revertToOriginal)
         self.revert_act.setEnabled(False)
 
         # Actions for Tools menu
         self.crop_act = QAction(QIcon(os.path.join(icon_path, "crop.png")), "Crop", self)
         self.crop_act.setShortcut('C')
-        self.crop_act.triggered.connect(lambda: self.image_label.set_state(State.crop))
+        self.crop_act.triggered.connect(lambda: self.media_widget.set_state(State.crop))
 
         self.resize_act = QAction(QIcon(os.path.join(icon_path, "resize.png")), "Resize", self)
         self.resize_act.setShortcut('Shift+Z')
-        self.resize_act.triggered.connect(self.image_label.resizeImage)
+        self.resize_act.triggered.connect(self.media_widget.resizeImage)
 
         self.rotate90_cw_act = QAction(QIcon(os.path.join(icon_path, "rotate90_cw.png")), 'Rotate 90º CW', self)
         self.rotate90_cw_act.setShortcut('R')
-        self.rotate90_cw_act.triggered.connect(lambda: self.image_label.rotate_image_90("cw"))
+        self.rotate90_cw_act.triggered.connect(lambda: self.media_widget.rotate_image_90("cw"))
 
         self.rotate90_ccw_act = QAction(QIcon(os.path.join(icon_path, "rotate90_ccw.png")), 'Rotate 90º CCW', self)
         self.rotate90_ccw_act.setShortcut('Shift+R')
-        self.rotate90_ccw_act.triggered.connect(lambda: self.image_label.rotate_image_90("ccw"))
+        self.rotate90_ccw_act.triggered.connect(lambda: self.media_widget.rotate_image_90("ccw"))
 
         self.flip_horizontal = QAction(QIcon(os.path.join(icon_path, "flip_horizontal.png")), 'Flip Horizontal', self)
-        self.flip_horizontal.triggered.connect(lambda: self.image_label.flip_image("horizontal"))
+        self.flip_horizontal.triggered.connect(lambda: self.media_widget.flip_image("horizontal"))
 
         self.flip_vertical = QAction(QIcon(os.path.join(icon_path, "flip_vertical.png")), 'Flip Vertical', self)
-        self.flip_vertical.triggered.connect(lambda: self.image_label.flip_image('vertical'))
+        self.flip_vertical.triggered.connect(lambda: self.media_widget.flip_image('vertical'))
 
         self.zoom_in_act = QAction(QIcon(os.path.join(icon_path, "zoom_in.png")), 'Zoom In', self)
         self.zoom_in_act.setShortcut('Ctrl++')
@@ -226,33 +226,33 @@ class PhotoEditorWindow(QMainWindow):
 
         convert_to_grayscale = QToolButton()
         convert_to_grayscale.setIcon(QIcon(os.path.join(icon_path, "grayscale.png")))
-        convert_to_grayscale.clicked.connect(self.image_label.convertToGray)
+        convert_to_grayscale.clicked.connect(self.media_widget.convertToGray)
 
         convert_to_RGB = QToolButton()
         convert_to_RGB.setIcon(QIcon(os.path.join(icon_path, "rgb.png")))
-        convert_to_RGB.clicked.connect(self.image_label.convertToRGB)
+        convert_to_RGB.clicked.connect(self.media_widget.convertToRGB)
 
         convert_to_sepia = QToolButton()
         convert_to_sepia.setIcon(QIcon(os.path.join(icon_path, "sepia.png")))
-        convert_to_sepia.clicked.connect(self.image_label.convertToSepia)
+        convert_to_sepia.clicked.connect(self.media_widget.convertToSepia)
 
         change_hue = QToolButton()
         change_hue.setIcon(QIcon(os.path.join(icon_path, "")))
-        change_hue.clicked.connect(self.image_label.changeHue)
+        change_hue.clicked.connect(self.media_widget.changeHue)
 
         brightness_label = QLabel("Brightness")
         self.brightness_slider = QSlider(Qt.Horizontal)
         self.brightness_slider.setRange(-255, 255)
         self.brightness_slider.setTickInterval(35)
         self.brightness_slider.setTickPosition(QSlider.TicksAbove)
-        self.brightness_slider.valueChanged.connect(self.image_label.changeBrighteness)
+        self.brightness_slider.valueChanged.connect(self.media_widget.changeBrighteness)
 
         contrast_label = QLabel("Contrast")
         self.contrast_slider = QSlider(Qt.Horizontal)
         self.contrast_slider.setRange(-255, 255)
         self.contrast_slider.setTickInterval(35)
         self.contrast_slider.setTickPosition(QSlider.TicksAbove)
-        self.contrast_slider.valueChanged.connect(self.image_label.changeContrast)
+        self.contrast_slider.valueChanged.connect(self.media_widget.changeContrast)
 
         # Set layout for dock widget
         editing_grid = QGridLayout()
@@ -279,12 +279,12 @@ class PhotoEditorWindow(QMainWindow):
     def createMainLabel(self):
         """Create an instance of the imageLabel class and set it 
            as the main window's central widget."""
-        self.image_label = ImageLabel(self)
+        self.media_widget = ImageLabel(self)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setBackgroundRole(QPalette.Dark)
         self.scroll_area.setAlignment(Qt.AlignCenter)
-        self.scroll_area.setWidget(self.image_label)
+        self.scroll_area.setWidget(self.media_widget)
         self.setCentralWidget(self.scroll_area)
         self.resize(QApplication.primaryScreen().availableSize() * 3 / 5)
 
@@ -307,16 +307,16 @@ class PhotoEditorWindow(QMainWindow):
                                                   "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
                     GIF Files (*.gif)")
 
-        # Deactivate the editor_img if not an image
+        # Deactivate the img_editor if not an image
         ext = os.path.splitext(file)[1][1:]
         if ext not in FILE_EXTENSION_PHOTO:
-            self.image_label.reset_image()
+            self.media_widget.reset()
             self.setEnabled(False)
             return False
         self.setEnabled(True)
 
         if file:
-            self.image_label.load_image(file)
+            self.media_widget.open_media(file)
             self.cumul_scale_factor = 1
             self.scroll_area.setVisible(True)
             self.print_act.setEnabled(True)
@@ -324,7 +324,7 @@ class PhotoEditorWindow(QMainWindow):
             self.updateActions()
 
             if not self.fit_to_window_act.isChecked():
-                self.image_label.adjustSize()
+                self.media_widget.adjustSize()
             else:
                 self.fitToWindow()
 
@@ -339,15 +339,15 @@ class PhotoEditorWindow(QMainWindow):
                                     "Unable to open image.", QMessageBox.Ok)
         return True
 
-    def save_image_as(self):
+    def save_media_as(self):
         """Save the image displayed in the label."""
-        if not self.image_label.qimage.isNull():
+        if not self.media_widget.qimage.isNull():
             image_file, _ = QFileDialog.getSaveFileName(self, "Save Image",
                                                         "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
                     GIF Files (*.gif)")
 
-            if image_file and not self.image_label.qimage.isNull():
-                self.image_label.qimage.save(image_file)
+            if image_file and not self.media_widget.qimage.isNull():
+                self.media_widget.qimage.save_media(image_file)
             else:
                 QMessageBox.information(self, "Error",
                                         "Unable to save image.", QMessageBox.Ok)
@@ -355,10 +355,10 @@ class PhotoEditorWindow(QMainWindow):
             QMessageBox.information(self, "Empty Image",
                                     "There is no image to save.", QMessageBox.Ok)
 
-    def save_image(self):
+    def save_media(self):
         """Save the image displayed in the label."""
-        if not self.image_label.qimage.isNull():
-            self.image_label.save(self._model.media_path)
+        if not self.media_widget.qimage.isNull():
+            self.media_widget.save_media(self._model.media_path)
         else:
             QMessageBox.information(self, "Empty Image",
                                     "There is no image to save.", QMessageBox.Ok)
@@ -366,7 +366,7 @@ class PhotoEditorWindow(QMainWindow):
     def scale_image(self, scale_factor):
         """Zoom in and zoom out."""
         self.cumul_scale_factor *= scale_factor
-        self.image_label.resize(scale_factor * self.image_label.size())
+        self.media_widget.resize(scale_factor * self.media_widget.size())
 
         self.adjustScrollBar(self.scroll_area.horizontalScrollBar(), scale_factor)
         self.adjustScrollBar(self.scroll_area.verticalScrollBar(), scale_factor)
@@ -376,7 +376,7 @@ class PhotoEditorWindow(QMainWindow):
 
     def _normal_size(self):
         """View image with its normal dimensions."""
-        self.image_label.adjustSize()
+        self.media_widget.adjustSize()
         self.cumul_scale_factor = 1.0
 
     def fitToWindow(self):
@@ -385,11 +385,11 @@ class PhotoEditorWindow(QMainWindow):
         if not fitToWindow:
             self._normal_size()
         else:
-            if not self.image_label.pixmap().isNull():
+            if not self.media_widget.pixmap().isNull():
                 w, h = self.scroll_area.width(), self.scroll_area.height()
-                wi, hi = self.image_label.pixmap().width(), self.image_label.pixmap().height()
+                wi, hi = self.media_widget.pixmap().width(), self.media_widget.pixmap().height()
                 self.cumul_scale_factor = factor = min(h / hi, w / wi)
-                self.image_label.resize(factor * self.image_label.pixmap().size())
+                self.media_widget.resize(factor * self.media_widget.pixmap().size())
 
         self.updateActions()
 

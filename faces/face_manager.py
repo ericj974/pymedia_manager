@@ -103,7 +103,7 @@ class FaceDetectorManager():
         """
 
         # img might be path, base64 or numpy array. Convert it to numpy whatever it is.
-        img = functions.load_image(img_path)
+        img = functions.open_media(img_path)
         base_img = img.copy()
 
         try:

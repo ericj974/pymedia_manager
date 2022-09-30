@@ -1,3 +1,6 @@
 [submodule "pyqtlet"]
 	path = pyqtlet
 	url = https://github.com/ericj974/pyqtlet.git
+[submodule "movie_editor"]
+	path = movie_editor
+	url = git@github.com:ericj974/movie_editor.git

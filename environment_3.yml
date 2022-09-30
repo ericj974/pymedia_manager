@@ -7,7 +7,6 @@ dependencies:
   - gstreamer
   - gst-plugins-good
   - gst-libav
-  - moviepy
   - numpy
   - opencv
   - pillow
@@ -19,4 +18,5 @@ dependencies:
   - pytz
   - pip
   - pip:
+      - moviepy # Bug with func if using conda version
       - pyheif

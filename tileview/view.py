@@ -26,7 +26,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
         # listen for model event signals
         self._model.selected_dir_changed.connect(self.on_dirpath_changed)
-        self._model.selected_media_changed.connect(self.on_selected_image_changed)
+        self._model.selected_media_changed.connect(self.on_selected_media_changed)
         self._model.selected_dir_content_changed.connect(self.on_watcher_dir_changed)
         self._model.selected_file_content_changed.connect(self.on_watcher_file_changed)
 
@@ -135,7 +135,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self.set_dirpath(dirpath)
 
     @pyqtSlot(str)
-    def on_selected_image_changed(self, filepath):
+    def on_selected_media_changed(self, filepath):
         # No more selected image
         if filepath == '':
             return

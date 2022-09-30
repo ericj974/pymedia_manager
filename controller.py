@@ -66,6 +66,8 @@ class MainController:
         if os.path.isfile(path) and self._model.media_path != path:
             self._watcher.removePaths(self._watcher.files())
             self._watcher.addPath(path)
+            if os.path.dirname(path) != self._model.dirpath:
+                self.update_dirpath(os.path.dirname(path))
             self._model.media_path = path
 
     def select_next_media(self):
