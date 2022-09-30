@@ -49,7 +49,8 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         # Renamer window
         self.renamer_dialog = None
         # Editor window
-        self.editor_window = None
+        self.editor_img_window = None
+        self.editor_vid_window = None
         # Tile view
         self.tile_window = None
         # # GPS Dialog
@@ -72,21 +73,19 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
     def launch_editor_img(self):
         def _on_destroyed():
-            self.editor_window = None
+            self.editor_img_window = None
 
-        if not self.editor_window:
-            self.editor_window = PhotoEditorWindow(model=self._model, controller=self._controller)
-            self.editor_window.destroyed.connect(_on_destroyed)
-        self.editor_window.show()
+        if not self.editor_img_window:
+            self.editor_img_window = PhotoEditorWindow(model=self._model, controller=self._controller)
+            self.editor_img_window.destroyed.connect(_on_destroyed)
 
     def launch_editor_vid(self):
         def _on_destroyed():
-            self.editor_window = None
+            self.editor_vid_window = None
 
-        if not self.editor_window:
-            self.editor_window = VideoPlayerWindow(model=self._model, controller=self._controller)
-            self.editor_window.destroyed.connect(_on_destroyed)
-        self.editor_window.show()
+        if not self.editor_vid_window:
+            self.editor_vid_window = VideoPlayerWindow(model=self._model, controller=self._controller)
+            self.editor_vid_window.destroyed.connect(_on_destroyed)
 
     def launch_tile_view(self):
         def _on_destroyed():
@@ -121,6 +120,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
     def on_listview_doubleclick(self, event):
         self.launch_editor_img()
+        self.launch_editor_vid()
         self._controller.set_media_path(
             self.widget.fileModel.filePath(
                 self.widget.listview.selectionModel().selectedIndexes()[0]))

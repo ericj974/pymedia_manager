@@ -4,6 +4,9 @@ channels:
   - defaults
 dependencies:
   - python=3.* #  - libstdcxx-ng # Bug fix for "Cannot load `swrast` and `iris` drivers"
+  - gstreamer
+  - gst-plugins-good
+  - gst-libav
   - moviepy
   - numpy
   - opencv

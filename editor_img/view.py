@@ -30,7 +30,6 @@ class PhotoEditorWindow(QMainWindow):
         self.createActionsShortcuts()
         self.createMenus()
         self.createToolBar()
-        self.show()
 
         self.setAttribute(Qt.WA_DeleteOnClose, True)
         # listen for model event
@@ -41,6 +40,7 @@ class PhotoEditorWindow(QMainWindow):
         self.setWindowTitle("Photo Editor")
         self.showMaximized()
         self.setStatusBar(QStatusBar())
+        self.setVisible(False)
 
         # Open selected image
         if self._model.media_path:
@@ -54,8 +54,9 @@ class PhotoEditorWindow(QMainWindow):
 
     @pyqtSlot(str)
     def on_media_path_changed(self, path):
-        self.open_media(file=path)
-        self.show()
+        ok = self.open_media(file=path)
+        if ok or self.isVisible():
+            self.show()
 
     def createActionsShortcuts(self):
         # Actions for Photo Editor menu
@@ -311,7 +312,7 @@ class PhotoEditorWindow(QMainWindow):
         if ext not in FILE_EXTENSION_PHOTO:
             self.image_label.reset_image()
             self.setEnabled(False)
-            return
+            return False
         self.setEnabled(True)
 
         if file:
@@ -336,6 +337,7 @@ class PhotoEditorWindow(QMainWindow):
         else:
             QMessageBox.information(self, "Error",
                                     "Unable to open image.", QMessageBox.Ok)
+        return True
 
     def save_image_as(self):
         """Save the image displayed in the label."""

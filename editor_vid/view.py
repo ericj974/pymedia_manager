@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout, QLabel,
-                             QSizePolicy, QSlider, QStyle, QVBoxLayout)
+                             QSizePolicy, QSlider, QStyle, QVBoxLayout, QStatusBar)
 from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QAction
 
 from controller import MainController
@@ -27,12 +27,17 @@ class VideoPlayerWindow(QMainWindow):
         self.createMainLabel()
         self.createActionsShortcuts()
         self.createMenus()
-        self.show()
 
         self.setAttribute(Qt.WA_DeleteOnClose, True)
         # listen for model event
         # Model Event - selected image has changed
         self._model.selected_media_changed.connect(self.on_media_path_changed)
+
+        self.setMinimumSize(300, 200)
+        self.setWindowTitle("Video Player")
+        self.showMaximized()
+        self.setStatusBar(QStatusBar())
+        self.setVisible(False)
 
         # Open selected video
         if self._model.media_path:
@@ -106,8 +111,9 @@ class VideoPlayerWindow(QMainWindow):
 
     @pyqtSlot(str)
     def on_media_path_changed(self, path):
-        self.open_media(file=path)
-        self.show()
+        ok = self.open_media(file=path)
+        if ok or self.isVisible():
+            self.show()
 
     def open_media(self, file=""):
         if file == "":
@@ -120,9 +126,10 @@ class VideoPlayerWindow(QMainWindow):
                 QMediaContent(QUrl.fromLocalFile(file)))
             self.playButton.setEnabled(True)
             self.play()
+            return True
         else:
             self.setEnabled(False)
-            return
+            return False
 
     def exitCall(self):
         pass
