@@ -66,9 +66,13 @@ class ClipEditorWindow(QMainWindow):
         self.about_act = QAction('About', self)
         self.about_act.triggered.connect(self.aboutDialog)
 
-        self.exit_act = QAction(QIcon(os.path.join(icon_path, "exit.png")), 'Quit Photo Editor', self)
+        self.exit_act = QAction(QIcon(os.path.join(icon_path, "exit.png")), 'Quit Editor', self)
         self.exit_act.setShortcut('Ctrl+Q')
         self.exit_act.triggered.connect(self.close)
+
+        self.open_act = QAction(QIcon(os.path.join(icon_path, "open.png")), 'Open...', self)
+        self.open_act.setShortcut('Ctrl+O')
+        self.open_act.triggered.connect(lambda: self.open_media(''))
 
         self.save_act = QAction(QIcon(os.path.join(icon_path, "save.png")), "Save...", self)
         self.save_act.setShortcut('Ctrl+S')
@@ -143,6 +147,7 @@ class ClipEditorWindow(QMainWindow):
 
         # Create file menu and add actions
         file_menu = menu_bar.addMenu('File')
+        file_menu.addAction(self.open_act)
         file_menu.addAction(self.save_act)
         file_menu.addSeparator()
         file_menu.addAction(self.exit_act)
@@ -175,6 +180,7 @@ class ClipEditorWindow(QMainWindow):
         self.addToolBar(tool_bar)
 
         # Add actions to the toolbar
+        tool_bar.addAction(self.open_act)
         tool_bar.addAction(self.save_act)
         tool_bar.addAction(self.exit_act)
         tool_bar.addSeparator()
@@ -189,14 +195,12 @@ class ClipEditorWindow(QMainWindow):
         # tool_bar.addAction(self.zoom_in_act)
         # tool_bar.addAction(self.zoom_out_act)
 
-
     def createEditingBar(self):
         """Create dock widget for editing tools."""
         # TODO: Add a tab widget for the different editing tools
         self.editing_bar = QDockWidget("Tools")
         self.editing_bar.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.editing_bar.setMinimumWidth(90)
-
 
         brightness_label = QLabel("Brightness")
         self.brightness_slider = QSlider(Qt.Horizontal)
@@ -276,20 +280,30 @@ class ClipEditorWindow(QMainWindow):
         self.btn_play.setEnabled(False)
         self.errorLabel.setText("Error: " + self.media_widget.errorString())
 
-
-
     def revertToOriginal(self):
-        pass
-
+        self.media_widget.set_clip(self.media_widget.clip_orig)
 
     def open_media(self, file=""):
         """Load a new image into the """
         if file == "":
             file, _ = QFileDialog.getOpenFileName(self, "Open Media",
                                                   "", "MP4 Files (*.mp4);;AVI Files (*.avi)")
+            if file is not None:
+                try:
+                    ext = os.path.splitext(file)[1][1:]
+                    if ext in FILE_EXTENSION_VIDEO:
+                        self._controller.set_media_path(file)
+                    else:
+                        QMessageBox.warning(self, "Media", "Media extension not supported.", QMessageBox.Ok)
+                        return
+                except:
+                    QMessageBox.warning(self, "Media", "Error while trying to open media.", QMessageBox.Ok)
+                    return
 
-        # Deactivate the img_editor if not an image
-        ext = os.path.splitext(file)[1][1:]
+        try:
+            ext = os.path.splitext(file)[1][1:]
+        except:
+            ext = ''
         if ext not in FILE_EXTENSION_VIDEO:
             self.media_widget.reset()
             self.setEnabled(False)

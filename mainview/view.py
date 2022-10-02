@@ -3,10 +3,10 @@ from functools import partial
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import *
 
-from controller import MainController
-from img_editor.view import PhotoEditorWindow
 from clip_viewer.view import VideoPlayerWindow
+from controller import MainController
 from gps.view import MainGPSWindow
+from img_editor.view import PhotoEditorWindow
 from mainview import gui
 from model import MainModel
 from nodes.node_manager import ClipNodeManager
@@ -77,7 +77,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.renamer_dialog.checked_all()
         self.renamer_dialog.show()
 
-    def launch_editor_img(self, force_show = False):
+    def launch_editor_img(self, force_show=False):
         def _on_destroyed():
             self.editor_img_window = None
 
@@ -87,7 +87,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
             if force_show:
                 self.editor_img_window.show()
 
-    def launch_editor_vid(self, force_show = False):
+    def launch_editor_vid(self, force_show=False):
         def _on_destroyed():
             self.editor_vid_window = None
 

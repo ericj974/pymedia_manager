@@ -1,9 +1,12 @@
-from nodes.base.dialog import ClipActionParams
 import moviepy.video.fx.all as vfx
+
+from nodes.base.dialog import ClipActionParams
+
 
 class RotationOrientation(object):
     cw = "cw"
     ccw = "ccw"
+
 
 class FlipOrientation(object):
     none = "none"
@@ -53,3 +56,38 @@ class ClipFlipParams(ClipActionParams):
             self.mirror_x = not self.mirror_x
         elif orientation == FlipOrientation.vertical:
             self.mirror_y = not self.mirror_y
+
+
+class ClipLuminosityParams(ClipActionParams):
+    action_type = "Luminosity"
+
+    def __init__(self, orientation=FlipOrientation.none, name=None):
+        super().__init__(name=name, action_type=ClipFlipParams.action_type)
+        # Horizontal Flip Flag
+        self.mirror_x = False
+        # Vertical Flip Falg
+        self.mirror_y = False
+
+    def process_clip(self, clip):
+        return clip.fx(vfx.lum_contrast, lum=1, contrast=1, contrast_thr=126)
+
+
+class ClipBrightnessParams(ClipActionParams):
+    action_type = "Brightness"
+
+    def __init__(self, value=0, name=None):
+        super().__init__(name=name, action_type=ClipFlipParams.action_type)
+        # Brightness
+        self.value = value
+
+    def set_brightness(self, value):
+        self.value = value
+
+    #
+    # def process_clip(self, clip):
+    #     def func(pic):
+    #         return np.maximum(0,np.minimum(255, (pic + self.value))).astype('uint8')
+    #     return clip.fl_image(func)
+
+    def process_clip(self, clip):
+        return clip.fx(vfx.colorx, factor=self.value)

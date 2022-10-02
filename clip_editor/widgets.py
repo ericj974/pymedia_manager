@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMessageBox
 
-from clip_editor.action_params import ClipRotateParams, ClipFlipParams
+from clip_editor.action_params import ClipRotateParams, ClipFlipParams, ClipBrightnessParams
 from nodes.clip_editor import ClipViewerWidget
 from nodes.dialogs.crop import ClipCropperParams, ClipCropperDialog
 from nodes.dialogs.zoom import ClipZoomParams, ClipZoomDialog
@@ -14,7 +14,7 @@ class ClipEditorWidget(ClipViewerWidget):
         # For simplicity, we will add flip and rotations first.
         # Reason behind is that user will usually rotate the video before cropping and zooming,
         # and rotation -> zoom is different from zoom -> rotation, so order will be enforced
-        self.action_pipeline = [ClipRotateParams(), ClipFlipParams()]
+        self.action_pipeline = [ClipBrightnessParams(), ClipRotateParams(), ClipFlipParams()]
         # The current opened dialog
         self.dialog = None
         # Save a copy of the original clip
@@ -54,6 +54,7 @@ class ClipEditorWidget(ClipViewerWidget):
             return -1, params
 
     def crop_media(self):
+        self.clip_stop()
         ind, params = self._update_create_action(ClipCropperParams)
         self.dialog = ClipCropperDialog(clip=self.get_processed_clip(ind),
                                         params=params,
@@ -62,6 +63,7 @@ class ClipEditorWidget(ClipViewerWidget):
         self.dialog.window_closing.connect(self.process_clip)
 
     def zoom_media(self):
+        self.clip_stop()
         ind, params = self._update_create_action(ClipZoomParams)
         self.dialog = ClipZoomDialog(clip=self.get_processed_clip(ind),
                                      params=params,
@@ -70,17 +72,25 @@ class ClipEditorWidget(ClipViewerWidget):
         self.dialog.window_closing.connect(self.process_clip)
 
     def rotate_image_90(self, orientation):
+        self.clip_stop()
         ind, params = self._update_create_action(ClipRotateParams)
         params.add_angle(90.0, orientation)
         self.process_clip()
 
     def flip_image(self, orientation):
+        self.clip_stop()
         ind, params = self._update_create_action(ClipFlipParams)
         params.add_flip(orientation)
         self.process_clip()
 
-    def change_brightness(self):
-        pass
+    def change_brightness(self, value):
+        if (value < -255 | value > 255):
+            return
+
+        self.clip_stop()
+        ind, params = self._update_create_action(ClipBrightnessParams)
+        params.set_brightness(value)
+        self.process_clip()
 
     def change_contrast(self):
         pass

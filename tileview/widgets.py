@@ -117,7 +117,7 @@ class ImageWidget(TileWidget):
 
     def update_comment(self):
         user_comment = utils.get_exif_user_comment(self.file)
-        return  user_comment
+        return user_comment
 
     def save_comment(self, user_comment):
         exif_dic = utils.get_exif_v2(self.file)

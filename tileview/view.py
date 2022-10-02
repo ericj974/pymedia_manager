@@ -215,5 +215,3 @@ class MainTileWindow(QtWidgets.QMainWindow):
         for i in range(self._layout.count()):
             item = self._layout.itemAt(i)
             item.widget().scaledToWidth(win_size.width() / self.max_col)
-
-
