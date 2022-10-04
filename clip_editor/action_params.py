@@ -13,10 +13,11 @@ class FlipOrientation(object):
     horizontal = 'horizontal'
     vertical = 'vertical'
 
+
 class ClipRotateParams(ClipActionParams):
     action_type = "Rotate"
 
-    def __init__(self, orientation=RotationOrientation.ccw, angle=0, name=None):
+    def __init__(self, angle=0, name=None):
         super().__init__(name=name, action_type=ClipRotateParams.action_type)
         # in degrees, counter clockwise
         self.angle = angle
@@ -35,7 +36,7 @@ class ClipRotateParams(ClipActionParams):
 class ClipFlipParams(ClipActionParams):
     action_type = "Flip"
 
-    def __init__(self, orientation=FlipOrientation.none, name=None):
+    def __init__(self, name=None):
         super().__init__(name=name, action_type=ClipFlipParams.action_type)
         # Horizontal Flip Flag
         self.mirror_x = False
@@ -61,8 +62,8 @@ class ClipFlipParams(ClipActionParams):
 class ClipLuminosityParams(ClipActionParams):
     action_type = "Luminosity"
 
-    def __init__(self, orientation=FlipOrientation.none, name=None):
-        super().__init__(name=name, action_type=ClipFlipParams.action_type)
+    def __init__(self, name=None):
+        super().__init__(name=name, action_type=ClipLuminosityParams.action_type)
         # Horizontal Flip Flag
         self.mirror_x = False
         # Vertical Flip Falg
@@ -76,7 +77,7 @@ class ClipBrightnessParams(ClipActionParams):
     action_type = "Brightness"
 
     def __init__(self, value=0, name=None):
-        super().__init__(name=name, action_type=ClipFlipParams.action_type)
+        super().__init__(name=name, action_type=ClipBrightnessParams.action_type)
         # Brightness
         self.value = value
 
