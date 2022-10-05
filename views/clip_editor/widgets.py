@@ -3,7 +3,7 @@ from threading import Thread
 from PyQt5.QtWidgets import QMessageBox
 
 from views.clip_editor.action_params import ClipRotateParams, ClipFlipParams, ClipBrightnessParams
-from movie_editor.common.clipreader import ClipReader
+from common.clipreader import ClipReader
 from nodes.clip_editor import ClipViewerWidget
 from nodes.dialogs.crop import ClipCropperParams, ClipCropperDialog
 from nodes.dialogs.zoom import ClipZoomParams, ClipZoomDialog
