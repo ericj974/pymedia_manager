@@ -302,11 +302,16 @@ class PhotoEditorWindow(QMainWindow):
         pass
 
     def open_media(self, file=""):
-        """Load a new image into the """
+        """Load a new media"""
         if file == "":
-            file, _ = QFileDialog.getOpenFileName(self, "Open Image",
-                                                  "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
-                    GIF Files (*.gif)")
+            extensions = ['*.'+ext for ext in FILE_EXTENSION_PHOTO]
+            ext = "("
+            for e in extensions:
+                ext += e + " "
+            ext += ")"
+
+            file, _ = QFileDialog.getOpenFileName(self, "Open Media",
+                                                  "", f"Files {ext}")
 
         # Deactivate the img_editor if not an image
         ext = os.path.splitext(file)[1][1:]

@@ -285,8 +285,14 @@ class ClipEditorWindow(QMainWindow):
     def open_media(self, file=""):
         """Load a new image into the """
         if file == "":
+            extensions = ['*.'+ext for ext in FILE_EXTENSION_VIDEO]
+            ext = "("
+            for e in extensions:
+                ext += e + " "
+            ext += ")"
+
             file, _ = QFileDialog.getOpenFileName(self, "Open Media",
-                                                  "", "MP4 Files (*.mp4);;AVI Files (*.avi)")
+                                                  "", f"Files {ext}")
             if file is not None:
                 try:
                     ext = os.path.splitext(file)[1][1:]
