@@ -6,11 +6,12 @@ import os
 import piexif
 from PIL import Image
 
-import renamer.parsers.base
+import views.renamer.parsers.base
 import utils
-from renamer import parsers, ClassWithTag, RenamerWithParser, MetaParser, ResultsRenaming, Result
-from renamer.common.status import StatusPhoto
-from renamer.parsers import FILE_EXTENSION_PHOTO_JPG
+from views.renamer import ClassWithTag, RenamerWithParser, MetaParser, ResultsRenaming, Result
+from views.renamer import parsers
+from views.renamer.common.status import StatusPhoto
+from constants import FILE_EXTENSION_PHOTO_JPG
 from thirdparty import exiftool
 
 
@@ -58,7 +59,7 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
 
                 # Datetime from filename
                 datetime_from_filename = None
-                result_parser = renamer.parsers.base.ResultParser()
+                result_parser = views.renamer.parsers.base.ResultParser()
                 if self.parser.try_match(filename_src, result_parser, do_search_first=False):
                     datetime_from_filename = result_parser.DateTimeOriginal
 
@@ -103,8 +104,8 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
 
             # Try to reparse the filename and see if we get a date different from exif.
             # If so change exif
-            out = renamer.parsers.base.ResultParser()
-            regex = renamer.parsers.base.ParserWithRegexSegments(file_extension)
+            out = views.renamer.parsers.base.ResultParser()
+            regex = views.renamer.parsers.base.ParserWithRegexSegments(file_extension)
             regex.reg_segments = [parsers.YearMonthDayParser(), '_', parsers.TimeParser()]
             datetime_name_test = None
             if regex.try_match(filename, out, do_search_first=True):

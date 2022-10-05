@@ -2,7 +2,7 @@ import abc
 import datetime
 import re
 
-from renamer.common import nameddic
+from views.renamer.common import nameddic
 
 
 class ResultParser(nameddic):

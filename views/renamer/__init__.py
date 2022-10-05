@@ -5,9 +5,9 @@ import inspect
 import os
 from shutil import copy2
 
-from renamer.common import nameddic, MyRepo
-from renamer.common.base import ClassWithTag
-from renamer.parsers.base import MetaParser
+from views.renamer.common import nameddic, MyRepo
+from views.renamer.common.base import ClassWithTag
+from views.renamer.parsers.base import MetaParser
 
 BACKUP_FOLDERNAME = '.backup'
 REPO_RENAMERS = MyRepo()

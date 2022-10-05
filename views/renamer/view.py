@@ -5,13 +5,12 @@ from functools import partial
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import *
 
-import renamer
-import renamer.photo
+from views import renamer
 from controller import MainController
 from model import MainModel
-from renamer import gui as renamer_ui
-from renamer.common import nameddic
-from renamer.parsers import FILE_EXTENSION_PHOTO_HEIF, FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_VIDEO
+from views.renamer import gui as renamer_ui
+from views.renamer.common import nameddic
+from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO_HEIF, FILE_EXTENSION_VIDEO
 
 file_extensions_per_tag = {
     'photo_heic': FILE_EXTENSION_PHOTO_HEIF,
@@ -36,11 +35,11 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
         self._model.selected_dir_content_changed.connect(self.on_dir_content_changed)
 
         # Load the different parsers in a plugin way.
-        from renamer import parsers
-        parsers.load_plugins(parent_module_name='renamer.parsers')
+        from views.renamer import parsers
+        parsers.load_plugins(parent_module_name='views.renamer.parsers')
         repo_parsers = parsers.REPO_PARSERS
         # Finally load the renamer
-        renamer.load_plugins(parent_module_name='renamer')
+        renamer.load_plugins(parent_module_name='views.renamer')
         repo_renamers = renamer.REPO_RENAMERS
         # Build the generic renamer when tere is no specific renamer associated with the tag
         for tag, parsers in repo_parsers.items():

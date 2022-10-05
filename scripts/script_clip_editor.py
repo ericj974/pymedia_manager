@@ -7,9 +7,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
 import resources.test_clips as test_clips
-from clip_editor.view import ClipEditorWindow
+from views.clip_editor.view import ClipEditorWindow
 from controller import MainController
-from img_editor.view import PhotoEditorWindow
 from model import MainModel
 
 argparser = argparse.ArgumentParser(description='Display tile view for images inside the specified folder')

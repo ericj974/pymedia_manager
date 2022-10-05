@@ -5,10 +5,10 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 
-import renamer
+from views import renamer
 from controller import MainController
 from model import MainModel
-from renamer.view import MainRenamerWindow
+from views.renamer.view import MainRenamerWindow
 # Parse the basic argument first
 from resources import test_pics
 
@@ -34,7 +34,7 @@ def main():
     args = parser.parse_args()
 
     # Load the different parsers in a plugin way.
-    from renamer import parsers
+    from views.renamer import parsers
     parsers.load_plugins(parent_module_name='renamer.parsers')
     repo_parsers = parsers.REPO_PARSERS
     # Finally load the renamer

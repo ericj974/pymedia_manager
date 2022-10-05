@@ -3,15 +3,15 @@ from functools import partial
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import *
 
-from clip_editor.view import ClipEditorWindow
+from views.clip_editor.view import ClipEditorWindow
 from controller import MainController
-from gps.view import MainGPSWindow
-from img_editor.view import PhotoEditorWindow
-from mainview import gui
+from views.gps.view import MainGPSWindow
+from views.img_editor.view import PhotoEditorWindow
+from views.mainview import gui
 from model import MainModel
-from renamer.common import nameddic
-from renamer.view import MainRenamerWindow
-from tileview.view import MainTileWindow
+from views.renamer import nameddic
+from views.renamer.view import MainRenamerWindow
+from views.tileview.view import MainTileWindow
 
 
 class MediaManagementView(QMainWindow, gui.Ui_MainWindow):

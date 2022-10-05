@@ -1,5 +1,4 @@
 import os
-import sys
 from functools import partial
 
 import piexif
@@ -9,9 +8,10 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import *
 
 import utils
+from constants import FILE_EXTENSION_PHOTO_JPG
 from controller import MainController
-from img_editor import widgets
-from gps.widgets import MyDraw, MyMapWidget, MyQTableWidgetItem
+from views.img_editor import widgets
+from views.gps.widgets import MyDraw, MyMapWidget, MyQTableWidgetItem
 from model import MainModel
 from thirdparty.pyqtlet.pyqtlet import L
 from thirdparty.pyqtlet.pyqtlet.leaflet import Marker
@@ -267,9 +267,14 @@ class MainGPSWindow(QMainWindow):
 
     def set_dirpath(self, dirpath):
         self._reset_state()
-
-        # generator = glob.iglob(os.path.join(dirpath, "*.jpg"))
         for file in self._model.files:
+            try:
+                ext = os.path.splitext(file)[1][1:]
+                if ext not in FILE_EXTENSION_PHOTO_JPG:
+                    continue
+            except:
+                continue
+
             exif = utils.get_exif_v2(file)
             if not exif:
                 self.exif_dic[file] = None

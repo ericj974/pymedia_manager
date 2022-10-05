@@ -3,22 +3,19 @@ import os
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QSize, pyqtSlot
 from PyQt5.QtGui import QIcon, QPalette, QWheelEvent
-from PyQt5.QtMultimedia import QMediaPlayer
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction,
-                             QSlider, QToolBar, QDockWidget, QMessageBox, QGridLayout,
-                             QScrollArea, QStatusBar, QFileDialog, QShortcut, QStyle)
+                             QSlider, QToolButton, QToolBar, QDockWidget, QMessageBox, QGridLayout,
+                             QScrollArea, QStatusBar, QFileDialog, QShortcut)
 
-from clip_editor.action_params import FlipOrientation, RotationOrientation
-from clip_editor.widgets import ClipEditorWidget
 from controller import MainController
-from img_editor import widgets
+from views.img_editor.widgets import ImageLabel, State
 from model import MainModel
-from renamer.parsers import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_VIDEO
+from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
 
-icon_path = os.path.join(os.path.dirname(os.path.abspath(widgets.__file__)), "icons")
+icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons")
 
 
-class ClipEditorWindow(QMainWindow):
+class PhotoEditorWindow(QMainWindow):
 
     def __init__(self, model: MainModel, controller: MainController):
         super().__init__()
@@ -32,7 +29,7 @@ class ClipEditorWindow(QMainWindow):
         self.createEditingBar()
         self.createActionsShortcuts()
         self.createMenus()
-        self.createTopToolBar()
+        self.createToolBar()
 
         self.setAttribute(Qt.WA_DeleteOnClose, True)
         # listen for model event
@@ -40,7 +37,7 @@ class ClipEditorWindow(QMainWindow):
         self._model.selected_media_changed.connect(self.on_media_path_changed)
 
         self.setMinimumSize(300, 200)
-        self.setWindowTitle("Clip Editor")
+        self.setWindowTitle("Photo Editor")
         self.showMaximized()
         self.setStatusBar(QStatusBar())
         self.setVisible(False)
@@ -62,50 +59,63 @@ class ClipEditorWindow(QMainWindow):
             self.show()
 
     def createActionsShortcuts(self):
-        # Actions for Editor menu
+        # Actions for Photo Editor menu
         self.about_act = QAction('About', self)
         self.about_act.triggered.connect(self.aboutDialog)
 
-        self.exit_act = QAction(QIcon(os.path.join(icon_path, "exit.png")), 'Quit Editor', self)
+        self.exit_act = QAction(QIcon(os.path.join(icon_path, "exit.png")), 'Quit Photo Editor', self)
         self.exit_act.setShortcut('Ctrl+Q')
         self.exit_act.triggered.connect(self.close)
 
+        # Actions for File menu
+        self.new_act = QAction(QIcon(os.path.join(icon_path, "new.png")), 'New...')
+
         self.open_act = QAction(QIcon(os.path.join(icon_path, "open.png")), 'Open...', self)
         self.open_act.setShortcut('Ctrl+O')
-        self.open_act.triggered.connect(lambda: self.open_media(''))
+        self.open_act.triggered.connect(self.open_media)
+
+        self.print_act = QAction(QIcon(os.path.join(icon_path, "print.png")), "Print...", self)
+        self.print_act.setShortcut('Ctrl+P')
+        # self.print_act.triggered.connect(self.printImage)
+        self.print_act.setEnabled(False)
 
         self.save_act = QAction(QIcon(os.path.join(icon_path, "save.png")), "Save...", self)
         self.save_act.setShortcut('Ctrl+S')
         self.save_act.triggered.connect(self.save_media)
         self.save_act.setEnabled(False)
 
+        self.save_as_act = QAction("Save As...", self)
+        self.save_as_act.setShortcut('Ctrl+Shift+S')
+        self.save_as_act.triggered.connect(self.save_media_as)
+        self.save_as_act.setEnabled(False)
+
         # Actions for Edit menu
         self.revert_act = QAction("Revert to Original", self)
-        self.revert_act.triggered.connect(self.revertToOriginal)
+        self.revert_act.triggered.connect(self.media_widget.revertToOriginal)
         self.revert_act.setEnabled(False)
 
         # Actions for Tools menu
-        self.crop_act = QAction(QIcon(os.path.join(icon_path, "vid_cut.png")), "Crop", self)
+        self.crop_act = QAction(QIcon(os.path.join(icon_path, "crop.png")), "Crop", self)
         self.crop_act.setShortcut('C')
-        self.crop_act.triggered.connect(lambda: self.media_widget.crop_media())
+        self.crop_act.triggered.connect(lambda: self.media_widget.set_state(State.crop))
 
         self.resize_act = QAction(QIcon(os.path.join(icon_path, "resize.png")), "Resize", self)
         self.resize_act.setShortcut('Shift+Z')
-        self.resize_act.triggered.connect(self.media_widget.zoom_media)
+        self.resize_act.triggered.connect(self.media_widget.resizeImage)
 
         self.rotate90_cw_act = QAction(QIcon(os.path.join(icon_path, "rotate90_cw.png")), 'Rotate 90º CW', self)
         self.rotate90_cw_act.setShortcut('R')
-        self.rotate90_cw_act.triggered.connect(lambda: self.media_widget.rotate_image_90(RotationOrientation.cw))
+        self.rotate90_cw_act.triggered.connect(lambda: self.media_widget.rotate_image_90("cw"))
 
         self.rotate90_ccw_act = QAction(QIcon(os.path.join(icon_path, "rotate90_ccw.png")), 'Rotate 90º CCW', self)
         self.rotate90_ccw_act.setShortcut('Shift+R')
-        self.rotate90_ccw_act.triggered.connect(lambda: self.media_widget.rotate_image_90(RotationOrientation.ccw))
+        self.rotate90_ccw_act.triggered.connect(lambda: self.media_widget.rotate_image_90("ccw"))
 
-        self.flip_horizontal_act = QAction(QIcon(os.path.join(icon_path, "flip_horizontal.png")), 'Flip Horizontal', self)
-        self.flip_horizontal_act.triggered.connect(lambda: self.media_widget.flip_image(FlipOrientation.horizontal))
+        self.flip_horizontal = QAction(QIcon(os.path.join(icon_path, "flip_horizontal.png")), 'Flip Horizontal', self)
+        self.flip_horizontal.triggered.connect(lambda: self.media_widget.flip_image("horizontal"))
 
-        self.flip_vertical_act = QAction(QIcon(os.path.join(icon_path, "flip_vertical.png")), 'Flip Vertical', self)
-        self.flip_vertical_act.triggered.connect(lambda: self.media_widget.flip_image(FlipOrientation.vertical))
+        self.flip_vertical = QAction(QIcon(os.path.join(icon_path, "flip_vertical.png")), 'Flip Vertical', self)
+        self.flip_vertical.triggered.connect(lambda: self.media_widget.flip_image('vertical'))
 
         self.zoom_in_act = QAction(QIcon(os.path.join(icon_path, "zoom_in.png")), 'Zoom In', self)
         self.zoom_in_act.setShortcut('Ctrl++')
@@ -129,6 +139,9 @@ class ClipEditorWindow(QMainWindow):
         self.fit_to_window_act.setCheckable(True)
         self.fit_to_window_act.setChecked(True)
 
+        self.detect_faces_act = QAction("Detect Faces", self)
+        self.detect_faces_act.triggered.connect(self._detect_faces)
+
         # And the shortcuts
         QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_media)
         QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_media)
@@ -149,6 +162,9 @@ class ClipEditorWindow(QMainWindow):
         file_menu = menu_bar.addMenu('File')
         file_menu.addAction(self.open_act)
         file_menu.addAction(self.save_act)
+        file_menu.addAction(self.save_as_act)
+        file_menu.addSeparator()
+        file_menu.addAction(self.print_act)
         file_menu.addSeparator()
         file_menu.addAction(self.exit_act)
 
@@ -161,19 +177,21 @@ class ClipEditorWindow(QMainWindow):
         tool_menu.addSeparator()
         tool_menu.addAction(self.rotate90_cw_act)
         tool_menu.addAction(self.rotate90_ccw_act)
-        tool_menu.addAction(self.flip_horizontal_act)
-        tool_menu.addAction(self.flip_vertical_act)
+        tool_menu.addAction(self.flip_horizontal)
+        tool_menu.addAction(self.flip_vertical)
         tool_menu.addSeparator()
         tool_menu.addAction(self.zoom_in_act)
         tool_menu.addAction(self.zoom_out_act)
         tool_menu.addAction(self.normal_size_act)
         tool_menu.addSeparator()
         tool_menu.addAction(self.fit_to_window_act)
+        tool_menu.addSeparator()
+        tool_menu.addAction(self.detect_faces_act)
 
         views_menu = menu_bar.addMenu('Views')
         views_menu.addAction(self.tools_menu_act)
 
-    def createTopToolBar(self):
+    def createToolBar(self):
         """Set up the toolbar."""
         tool_bar = QToolBar("Main Toolbar")
         tool_bar.setIconSize(QSize(26, 26))
@@ -182,6 +200,7 @@ class ClipEditorWindow(QMainWindow):
         # Add actions to the toolbar
         tool_bar.addAction(self.open_act)
         tool_bar.addAction(self.save_act)
+        tool_bar.addAction(self.print_act)
         tool_bar.addAction(self.exit_act)
         tool_bar.addSeparator()
         tool_bar.addAction(self.crop_act)
@@ -189,11 +208,11 @@ class ClipEditorWindow(QMainWindow):
         tool_bar.addSeparator()
         tool_bar.addAction(self.rotate90_ccw_act)
         tool_bar.addAction(self.rotate90_cw_act)
-        tool_bar.addAction(self.flip_horizontal_act)
-        tool_bar.addAction(self.flip_vertical_act)
-        # tool_bar.addSeparator()
-        # tool_bar.addAction(self.zoom_in_act)
-        # tool_bar.addAction(self.zoom_out_act)
+        tool_bar.addAction(self.flip_horizontal)
+        tool_bar.addAction(self.flip_vertical)
+        tool_bar.addSeparator()
+        tool_bar.addAction(self.zoom_in_act)
+        tool_bar.addAction(self.zoom_out_act)
 
     def createEditingBar(self):
         """Create dock widget for editing tools."""
@@ -202,22 +221,46 @@ class ClipEditorWindow(QMainWindow):
         self.editing_bar.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.editing_bar.setMinimumWidth(90)
 
+        # Create editing tool buttons
+        filters_label = QLabel("Filters")
+
+        convert_to_grayscale = QToolButton()
+        convert_to_grayscale.setIcon(QIcon(os.path.join(icon_path, "grayscale.png")))
+        convert_to_grayscale.clicked.connect(self.media_widget.convertToGray)
+
+        convert_to_RGB = QToolButton()
+        convert_to_RGB.setIcon(QIcon(os.path.join(icon_path, "rgb.png")))
+        convert_to_RGB.clicked.connect(self.media_widget.convertToRGB)
+
+        convert_to_sepia = QToolButton()
+        convert_to_sepia.setIcon(QIcon(os.path.join(icon_path, "sepia.png")))
+        convert_to_sepia.clicked.connect(self.media_widget.convertToSepia)
+
+        change_hue = QToolButton()
+        change_hue.setIcon(QIcon(os.path.join(icon_path, "")))
+        change_hue.clicked.connect(self.media_widget.changeHue)
+
         brightness_label = QLabel("Brightness")
         self.brightness_slider = QSlider(Qt.Horizontal)
         self.brightness_slider.setRange(-255, 255)
         self.brightness_slider.setTickInterval(35)
         self.brightness_slider.setTickPosition(QSlider.TicksAbove)
-        self.brightness_slider.valueChanged.connect(self.media_widget.change_brightness)
+        self.brightness_slider.valueChanged.connect(self.media_widget.changeBrighteness)
 
         contrast_label = QLabel("Contrast")
         self.contrast_slider = QSlider(Qt.Horizontal)
         self.contrast_slider.setRange(-255, 255)
         self.contrast_slider.setTickInterval(35)
         self.contrast_slider.setTickPosition(QSlider.TicksAbove)
-        self.contrast_slider.valueChanged.connect(self.media_widget.change_contrast)
+        self.contrast_slider.valueChanged.connect(self.media_widget.changeContrast)
 
         # Set layout for dock widget
         editing_grid = QGridLayout()
+        # editing_grid.addWidget(filters_label, 0, 0, 0, 2, Qt.AlignTop)
+        editing_grid.addWidget(convert_to_grayscale, 1, 0)
+        editing_grid.addWidget(convert_to_RGB, 1, 1)
+        editing_grid.addWidget(convert_to_sepia, 2, 0)
+        editing_grid.addWidget(change_hue, 2, 1)
         editing_grid.addWidget(brightness_label, 3, 0)
         editing_grid.addWidget(self.brightness_slider, 4, 0, 1, 0)
         editing_grid.addWidget(contrast_label, 5, 0)
@@ -234,8 +277,9 @@ class ClipEditorWindow(QMainWindow):
         self.tools_menu_act = self.editing_bar.toggleViewAction()
 
     def createMainLabel(self):
-
-        self.media_widget = ClipEditorWidget(self)
+        """Create an instance of the imageLabel class and set it 
+           as the main window's central widget."""
+        self.media_widget = ImageLabel(self)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setBackgroundRole(QPalette.Dark)
@@ -243,11 +287,6 @@ class ClipEditorWindow(QMainWindow):
         self.scroll_area.setWidget(self.media_widget)
         self.setCentralWidget(self.scroll_area)
         self.resize(QApplication.primaryScreen().availableSize() * 3 / 5)
-
-        # self.media_widget.stateChanged.connect(self.mediaStateChanged)
-        # self.media_widget.positionChanged.connect(self.positionChanged)
-        # self.media_widget.durationChanged.connect(self.durationChanged)
-        # self.media_widget.error.connect(self.handleError)
 
     def updateActions(self):
         """Update the values of menu and toolbar items when an image 
@@ -258,53 +297,19 @@ class ClipEditorWindow(QMainWindow):
         self.zoom_out_act.setEnabled(True)
         self.normal_size_act.setEnabled(True)
 
-
-    def mediaStateChanged(self, state):
-        if self.media_widget.state() == QMediaPlayer.PlayingState:
-            self.btn_play.setIcon(
-                self.style().standardIcon(QStyle.SP_MediaPause))
-        else:
-            self.btn_play.setIcon(
-                self.style().standardIcon(QStyle.SP_MediaPlay))
-
-    def positionChanged(self, position):
-        self.slider_frame.setValue(position)
-
-    def durationChanged(self, duration):
-        self.slider_frame.setRange(0, duration)
-
-    def setPosition(self, position):
-        self.media_widget.setPosition(position)
-
-    def handleError(self):
-        self.btn_play.setEnabled(False)
-        self.errorLabel.setText("Error: " + self.media_widget.errorString())
-
-    def revertToOriginal(self):
-        self.media_widget.set_clip(self.media_widget.clip_orig)
+    def _detect_faces(self):
+        pass
 
     def open_media(self, file=""):
         """Load a new image into the """
         if file == "":
-            file, _ = QFileDialog.getOpenFileName(self, "Open Media",
-                                                  "", "MP4 Files (*.mp4);;AVI Files (*.avi)")
-            if file is not None:
-                try:
-                    ext = os.path.splitext(file)[1][1:]
-                    if ext in FILE_EXTENSION_VIDEO:
-                        self._controller.set_media_path(file)
-                    else:
-                        QMessageBox.warning(self, "Media", "Media extension not supported.", QMessageBox.Ok)
-                        return
-                except:
-                    QMessageBox.warning(self, "Media", "Error while trying to open media.", QMessageBox.Ok)
-                    return
+            file, _ = QFileDialog.getOpenFileName(self, "Open Image",
+                                                  "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
+                    GIF Files (*.gif)")
 
-        try:
-            ext = os.path.splitext(file)[1][1:]
-        except:
-            ext = ''
-        if ext not in FILE_EXTENSION_VIDEO:
+        # Deactivate the img_editor if not an image
+        ext = os.path.splitext(file)[1][1:]
+        if ext not in FILE_EXTENSION_PHOTO:
             self.media_widget.reset()
             self.setEnabled(False)
             return False
@@ -314,6 +319,7 @@ class ClipEditorWindow(QMainWindow):
             self.media_widget.open_media(file)
             self.cumul_scale_factor = 1
             self.scroll_area.setVisible(True)
+            self.print_act.setEnabled(True)
             self.fit_to_window_act.setEnabled(True)
             self.updateActions()
 
@@ -333,22 +339,29 @@ class ClipEditorWindow(QMainWindow):
                                     "Unable to open image.", QMessageBox.Ok)
         return True
 
+    def save_media_as(self):
+        """Save the image displayed in the label."""
+        if not self.media_widget.qimage.isNull():
+            image_file, _ = QFileDialog.getSaveFileName(self, "Save Image",
+                                                        "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
+                    GIF Files (*.gif)")
+
+            if image_file and not self.media_widget.qimage.isNull():
+                self.media_widget.qimage.save_media(image_file)
+            else:
+                QMessageBox.information(self, "Error",
+                                        "Unable to save image.", QMessageBox.Ok)
+        else:
+            QMessageBox.information(self, "Empty Image",
+                                    "There is no image to save.", QMessageBox.Ok)
+
     def save_media(self):
         """Save the image displayed in the label."""
-        if self.media_widget.clip_reader.clip:
-            file, _ = QFileDialog.getSaveFileName(parent=self, caption="Save Media",
-                                                  directory=self._model.dirpath,
-                                                  filter="MP4 Files (*.mp4);;AVI Files (*.avi)")
-            filename, file_extension = os.path.splitext(os.path.basename(file))
-            if file_extension == '':
-                QMessageBox.warning(self, "Missing Extension",
-                                    "Cannot save the media.", QMessageBox.Ok)
-                return
-            if file:
-                self.media_widget.save_media(file)
+        if not self.media_widget.qimage.isNull():
+            self.media_widget.save_media(self._model.media_path)
         else:
-            QMessageBox.information(self, "Empty Media",
-                                    "There is no media to save.", QMessageBox.Ok)
+            QMessageBox.information(self, "Empty Image",
+                                    "There is no image to save.", QMessageBox.Ok)
 
     def scale_image(self, scale_factor):
         """Zoom in and zoom out."""
@@ -366,18 +379,17 @@ class ClipEditorWindow(QMainWindow):
         self.media_widget.adjustSize()
         self.cumul_scale_factor = 1.0
 
-
     def fitToWindow(self):
         fitToWindow = self.fit_to_window_act.isChecked()
         # self.scroll_area.setWidgetResizable(fitToWindow)
         if not fitToWindow:
             self._normal_size()
         else:
-            if self.media_widget.clip_reader.clip:
+            if not self.media_widget.pixmap().isNull():
                 w, h = self.scroll_area.width(), self.scroll_area.height()
-                wi, hi = self.media_widget.clip_reader.clip.w, self.media_widget.clip_reader.clip.h
+                wi, hi = self.media_widget.pixmap().width(), self.media_widget.pixmap().height()
                 self.cumul_scale_factor = factor = min(h / hi, w / wi)
-                self.media_widget.resize(QSize(int(factor*wi), int(factor*hi)))
+                self.media_widget.resize(factor * self.media_widget.pixmap().size())
 
         self.updateActions()
 
@@ -403,7 +415,7 @@ class ClipEditorWindow(QMainWindow):
         QMainWindow.wheelEvent(self, event)
 
     def resizeEvent(self, event):
-        # self.fitToWindow()
+        self.fitToWindow()
         QMainWindow.resizeEvent(self, event)
 
     def keyPressEvent(self, event):
@@ -417,4 +429,4 @@ class ClipEditorWindow(QMainWindow):
                 self.showMaximized()
 
     def closeEvent(self, event):
-        self.media_widget.clip_reader.stop()
+        pass

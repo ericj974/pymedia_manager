@@ -3,8 +3,8 @@ import os
 from PyQt5.QtCore import QFileSystemWatcher
 from send2trash import send2trash
 
+from constants import FILE_EXTENSION_MEDIA
 from model import MainModel
-from renamer.parsers import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_MEDIA
 
 
 class MainController:

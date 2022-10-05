@@ -68,4 +68,4 @@ class Ui_MainWindow(object):
         self.pushButton_editor_vid.setText(_translate("MainWindow", "Vid Editor"))
 
 
-from mainview.widgets import FileExplorerWidget
+from views.mainview.widgets import FileExplorerWidget

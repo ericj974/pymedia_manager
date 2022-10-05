@@ -1,5 +1,5 @@
-from renamer.common.base import ClassWithTag
-from renamer.parsers import ParserWithRegexSegments, YearMonthDayParser, TimeParser, DayParser, MonthParser, YearParser, \
+from views.renamer.common.base import ClassWithTag
+from views.renamer.parsers import ParserWithRegexSegments, YearMonthDayParser, TimeParser, DayParser, MonthParser, YearParser, \
     HourParser, MinParser
 
 

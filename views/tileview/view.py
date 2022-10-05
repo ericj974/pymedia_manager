@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import QStatusBar, QHBoxLayout, QAction
 import utils
 from controller import MainController
 from model import MainModel
-from renamer.parsers import FILE_EXTENSION_PHOTO, FILE_EXTENSION_VIDEO
-from tileview.widgets import UserCommentWidget, ImageWidget, VideoWidget
+from constants import FILE_EXTENSION_VIDEO, FILE_EXTENSION_PHOTO
+from views.tileview.widgets import UserCommentWidget, ImageWidget, VideoWidget
 
 
 class MainTileWindow(QtWidgets.QMainWindow):

@@ -1,5 +1,5 @@
-from renamer.common.base import ClassWithTag
-from renamer.parsers import ParserWithRegexSegments, YearMonthDayParser, TimeParser
+from views.renamer.common.base import ClassWithTag
+from views.renamer.parsers import ParserWithRegexSegments, YearMonthDayParser, TimeParser
 
 
 # 'IMG_XXXX.HEIC'

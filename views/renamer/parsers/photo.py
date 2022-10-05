@@ -1,5 +1,5 @@
-from renamer.common.base import ClassWithTag
-from renamer.parsers import YearMonthDayParser, TimeParser, ParserWithRegexSegments
+from views.renamer.common.base import ClassWithTag
+from views.renamer.parsers import YearMonthDayParser, TimeParser, ParserWithRegexSegments
 
 
 class RegPic1(ClassWithTag, ParserWithRegexSegments):

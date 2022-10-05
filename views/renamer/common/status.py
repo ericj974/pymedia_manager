@@ -1,4 +1,4 @@
-from renamer import Status
+from views.renamer import Status
 
 
 class StatusPhoto(Status):

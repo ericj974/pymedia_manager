@@ -3,7 +3,7 @@ import sys  # We need sys so that we can pass argv to QApplication
 from PyQt5.QtWidgets import *
 
 from controller import MainController
-from mainview.view import MediaManagementView
+from views.mainview.view import MediaManagementView
 from model import MainModel
 
 __appname__ = 'MediaManager'

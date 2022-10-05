@@ -1,9 +1,9 @@
 import pyheif
 from PIL import Image
 
-from renamer import *
-from renamer.common.status import StatusPhoto
-from renamer.parsers.photo_heic import ParserHEIC
+from views.renamer import *
+from views.renamer.common.status import StatusPhoto
+from views.renamer.parsers.photo_heic import ParserHEIC
 
 
 class ConverterPhotoHeic(ClassWithTag, RenamerWithParser):

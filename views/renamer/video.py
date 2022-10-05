@@ -3,10 +3,10 @@ import os
 from datetime import datetime
 
 import utils
-from renamer import ClassWithTag, RenamerWithParser, ResultsRenaming, Result
-from renamer.common.status import StatusPhoto
-from renamer.parsers import FILE_EXTENSION_VIDEO
-from renamer.parsers.base import ResultParser, MetaParser
+from views.renamer import ClassWithTag, RenamerWithParser, ResultsRenaming, Result
+from views.renamer.common.status import StatusPhoto
+from constants import FILE_EXTENSION_VIDEO
+from views.renamer.parsers.base import ResultParser, MetaParser
 from thirdparty import exiftool
 
 
