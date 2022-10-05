@@ -6,13 +6,13 @@ import os
 import piexif
 from PIL import Image
 
-import views.renamer.parsers.base
 import utils
+import views.renamer.parsers.base
+from constants import FILE_EXTENSION_PHOTO_JPG
+from thirdparty import exiftool
 from views.renamer import ClassWithTag, RenamerWithParser, MetaParser, ResultsRenaming, Result
 from views.renamer import parsers
 from views.renamer.common.status import StatusPhoto
-from constants import FILE_EXTENSION_PHOTO_JPG
-from thirdparty import exiftool
 
 
 class RenamerPhoto(ClassWithTag, RenamerWithParser):
@@ -77,9 +77,9 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
 
                 filename_dst, status_out = self.build_filename(filename_src, result_parser)
                 results[filename_src] = Result(dirpath=os.path.dirname(file),
-                                                filename_src=filename_src,
-                                                filename_dst=filename_dst,
-                                                status=status_out)
+                                               filename_src=filename_src,
+                                               filename_dst=filename_dst,
+                                               status=status_out)
 
                 print(filename_src + '|' + str(datetime_from_exif) + '|' + str(datetime_from_filename) + '|' + str(
                     datetime_from_filename) + '|')

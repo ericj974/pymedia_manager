@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
 from controller import MainController
-from views.gps import MainGPSWindow
+from views.gps.view import MainGPSWindow
 from model import MainModel
 import resources.test_pics as test_pics
 

@@ -10,12 +10,12 @@ from PyQt5.QtWidgets import *
 import utils
 from constants import FILE_EXTENSION_PHOTO_JPG
 from controller import MainController
-from views.img_editor import widgets
-from views.gps.widgets import MyDraw, MyMapWidget, MyQTableWidgetItem
 from model import MainModel
 from thirdparty.pyqtlet.pyqtlet import L
 from thirdparty.pyqtlet.pyqtlet.leaflet import Marker
 from thirdparty.pyqtlet.pyqtlet.leaflet.core import Evented
+from views.gps.widgets import MyDraw, MyMapWidget, MyQTableWidgetItem
+from views.img_editor import widgets
 
 icon_path = os.path.join(os.path.dirname(os.path.abspath(widgets.__file__)), "icons")
 
@@ -24,7 +24,6 @@ opacity_unselected = 0.7
 
 
 class MainGPSWindow(QMainWindow):
-
 
     # This is a workaround for some issues with
     # "Registered new object after initialization, existing clients won't be notified!"
@@ -389,5 +388,3 @@ class MainGPSWindow(QMainWindow):
                 continue
             self.gps_table.item(i, 1).setText(str(lnglat_dic['lng']))
             self.gps_table.item(i, 2).setText(str(lnglat_dic['lat']))
-
-

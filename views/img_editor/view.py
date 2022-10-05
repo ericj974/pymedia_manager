@@ -11,8 +11,9 @@ from controller import MainController
 from views.img_editor.widgets import ImageLabel, State
 from model import MainModel
 from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
+import resources.icons as icons
 
-icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons")
+icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
 
 class PhotoEditorWindow(QMainWindow):
@@ -72,7 +73,7 @@ class PhotoEditorWindow(QMainWindow):
 
         self.open_act = QAction(QIcon(os.path.join(icon_path, "open.png")), 'Open...', self)
         self.open_act.setShortcut('Ctrl+O')
-        self.open_act.triggered.connect(self.open_media)
+        self.open_act.triggered.connect(lambda: self.open_media(""))
 
         self.print_act = QAction(QIcon(os.path.join(icon_path, "print.png")), "Print...", self)
         self.print_act.setShortcut('Ctrl+P')

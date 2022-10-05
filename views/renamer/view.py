@@ -5,18 +5,19 @@ from functools import partial
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import *
 
-from views import renamer
+from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO_HEIF, FILE_EXTENSION_VIDEO
 from controller import MainController
 from model import MainModel
+from views import renamer
 from views.renamer import gui as renamer_ui
 from views.renamer.common import nameddic
-from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO_HEIF, FILE_EXTENSION_VIDEO
 
 file_extensions_per_tag = {
     'photo_heic': FILE_EXTENSION_PHOTO_HEIF,
     'photo': FILE_EXTENSION_PHOTO_JPG,
     'video': FILE_EXTENSION_VIDEO
 }
+
 
 class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
     def __init__(self, create_backup, delete_duplicate, model: MainModel, controller: MainController):
@@ -249,5 +250,3 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
                                 options=self.options)
         # Update the GUI
         self.set_dirpath(self._model.dirpath)
-
-

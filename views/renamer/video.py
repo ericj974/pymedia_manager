@@ -3,11 +3,11 @@ import os
 from datetime import datetime
 
 import utils
+from constants import FILE_EXTENSION_VIDEO
+from thirdparty import exiftool
 from views.renamer import ClassWithTag, RenamerWithParser, ResultsRenaming, Result
 from views.renamer.common.status import StatusPhoto
-from constants import FILE_EXTENSION_VIDEO
 from views.renamer.parsers.base import ResultParser, MetaParser
-from thirdparty import exiftool
 
 
 class RenamerVideo(ClassWithTag, RenamerWithParser):

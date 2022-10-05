@@ -8,14 +8,14 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction
                              QSlider, QToolBar, QDockWidget, QMessageBox, QGridLayout,
                              QScrollArea, QStatusBar, QFileDialog, QShortcut, QStyle)
 
+from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_VIDEO
+from controller import MainController
+from model import MainModel
 from views.clip_editor.action_params import FlipOrientation, RotationOrientation
 from views.clip_editor.widgets import ClipEditorWidget
-from controller import MainController
-from views.img_editor import widgets
-from model import MainModel
-from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_VIDEO
+import resources.icons as icons
 
-icon_path = os.path.join(os.path.dirname(os.path.abspath(widgets.__file__)), "icons")
+icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
 
 class ClipEditorWindow(QMainWindow):
@@ -53,7 +53,6 @@ class ClipEditorWindow(QMainWindow):
             else:
                 self.media_widget.reset()
                 self.setEnabled(False)
-
 
     @pyqtSlot(str)
     def on_media_path_changed(self, path):
@@ -101,7 +100,8 @@ class ClipEditorWindow(QMainWindow):
         self.rotate90_ccw_act.setShortcut('Shift+R')
         self.rotate90_ccw_act.triggered.connect(lambda: self.media_widget.rotate_image_90(RotationOrientation.ccw))
 
-        self.flip_horizontal_act = QAction(QIcon(os.path.join(icon_path, "flip_horizontal.png")), 'Flip Horizontal', self)
+        self.flip_horizontal_act = QAction(QIcon(os.path.join(icon_path, "flip_horizontal.png")), 'Flip Horizontal',
+                                           self)
         self.flip_horizontal_act.triggered.connect(lambda: self.media_widget.flip_image(FlipOrientation.horizontal))
 
         self.flip_vertical_act = QAction(QIcon(os.path.join(icon_path, "flip_vertical.png")), 'Flip Vertical', self)
@@ -258,7 +258,6 @@ class ClipEditorWindow(QMainWindow):
         self.zoom_out_act.setEnabled(True)
         self.normal_size_act.setEnabled(True)
 
-
     def mediaStateChanged(self, state):
         if self.media_widget.state() == QMediaPlayer.PlayingState:
             self.btn_play.setIcon(
@@ -366,7 +365,6 @@ class ClipEditorWindow(QMainWindow):
         self.media_widget.adjustSize()
         self.cumul_scale_factor = 1.0
 
-
     def fitToWindow(self):
         fitToWindow = self.fit_to_window_act.isChecked()
         # self.scroll_area.setWidgetResizable(fitToWindow)
@@ -377,7 +375,7 @@ class ClipEditorWindow(QMainWindow):
                 w, h = self.scroll_area.width(), self.scroll_area.height()
                 wi, hi = self.media_widget.clip_reader.clip.w, self.media_widget.clip_reader.clip.h
                 self.cumul_scale_factor = factor = min(h / hi, w / wi)
-                self.media_widget.resize(QSize(int(factor*wi), int(factor*hi)))
+                self.media_widget.resize(QSize(int(factor * wi), int(factor * hi)))
 
         self.updateActions()
 
