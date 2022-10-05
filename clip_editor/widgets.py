@@ -29,7 +29,6 @@ class ClipEditorWidget(ClipViewerWidget):
 
     def save_media(self, file, **kwargs):
         """ Save the media """
-        # TODO: Separate thread for this which implies a deep copy of the original movie (and file ?)
         clip = self.get_processed_clip()
         thread = Thread(target=self.thread_save_media, args=(self.clip_orig.filename, file))
         if clip:
@@ -46,8 +45,8 @@ class ClipEditorWidget(ClipViewerWidget):
         """
         Perform the following actions.
         * Process clip from original file
-        * Write to temp file if overwrite else write to destination file
-        :return:
+        * Write to destination file
+        TODO: Handle case where destination file == file
         """
         # Check that file exist
         if file == file_dest:

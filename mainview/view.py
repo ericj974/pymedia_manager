@@ -3,13 +3,12 @@ from functools import partial
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import *
 
-from clip_viewer.view import VideoPlayerWindow
+from clip_editor.view import ClipEditorWindow
 from controller import MainController
 from gps.view import MainGPSWindow
 from img_editor.view import PhotoEditorWindow
 from mainview import gui
 from model import MainModel
-from nodes.node_manager import ClipNodeManager
 from renamer.common import nameddic
 from renamer.view import MainRenamerWindow
 from tileview.view import MainTileWindow
@@ -23,9 +22,6 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self._model = model
         self._controller = controller
         self.setupUi(self)
-
-        # The action manager (performing edit actions)
-        self.action_manager = ClipNodeManager
 
         # connect widgets to controller
         self.__class__.dropEvent = self._controller.update_dirpath
@@ -92,7 +88,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
             self.editor_vid_window = None
 
         if not self.editor_vid_window:
-            self.editor_vid_window = VideoPlayerWindow(model=self._model, controller=self._controller)
+            self.editor_vid_window = ClipEditorWindow(model=self._model, controller=self._controller)
             self.editor_vid_window.destroyed.connect(_on_destroyed)
             if force_show:
                 self.editor_vid_window.show()

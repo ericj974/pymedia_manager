@@ -4,19 +4,16 @@ channels:
   - defaults
 dependencies:
   - python=3.* #  - libstdcxx-ng # Bug fix for "Cannot load `swrast` and `iris` drivers"
-  - gstreamer
-  - gst-plugins-good
-  - gst-libav
   - numpy
   - opencv
   - pillow
   - pyqt
-  - pyqtwebengine # bro
+  - pyqtwebengine # gps view
   - piexif
   - send2trash
   - tzwhere # this is to correct utc to correct timezone in case of QuickTime videos
   - pytz
   - pip
   - pip:
-      - moviepy # Bug with func if using conda version
+      - moviepy # Bug with func if using 1.0.3 conda version
       - pyheif

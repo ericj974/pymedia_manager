@@ -4,9 +4,9 @@ This is the main source code repository for my picture manager.
 
 ## Installation
 
-1. Clone the repo
+1. Clone the repo (with submodules)
    ```bash
-   git clone https://github.com/ericj974/media_manager.git
+   git clone --recursive https://github.com/ericj974/media_manager.git
    ```
 2. Setup the conda environment
    ```bash
