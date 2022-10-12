@@ -1,8 +1,12 @@
 from threading import Thread
 
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtWidgets import QMessageBox, QFileDialog
 
-from views.clip_editor.action_params import ClipRotateParams, ClipFlipParams, ClipBrightnessParams
+from common.state import PlayerState
+from constants import FILE_EXTENSION_VIDEO
+from nodes.dialogs.concat import ClipConcatParams
+from views.clip_editor.action_params import ClipRotateParams, ClipFlipParams, ClipLumContrastParams
 from common.clipreader import ClipReader
 from nodes.clip_editor import ClipViewerWidget
 from nodes.dialogs.crop import ClipCropperParams, ClipCropperDialog
@@ -12,16 +16,16 @@ from nodes.dialogs.zoom import ClipZoomParams, ClipZoomDialog
 class ClipEditorWidget(ClipViewerWidget):
     def __init__(self, parent=None):
         super(ClipEditorWidget, self).__init__(parent)
-        # Pipeline / sequence of ClipActionParams. Rotations and Flips will be one single action
-        # instead of cumulative actions as the user updates the rotation
-        # For simplicity, we will add flip and rotations first.
-        # Reason behind is that user will usually rotate the video before cropping and zooming,
-        # and rotation -> zoom is different from zoom -> rotation, so order will be enforced
-        self.action_pipeline = [ClipRotateParams(), ClipFlipParams()]
+        # Pipeline / sequence of ClipActionParams. We assume actions are not permutable
+        self.action_pipeline = []
         # The current opened dialog
         self.dialog = None
         # Save a copy of the original clip
         self.clip_orig = None
+
+        # tmp pixmap to apply brightness / contrast etc...
+        self.orig_videoframe = None
+        self.timer_id = -1
 
     def open_media(self, filepath, play=True, play_audio=False):
         super(ClipEditorWidget, self).open_media(filepath, play, play_audio)
@@ -69,23 +73,42 @@ class ClipEditorWidget(ClipViewerWidget):
 
     def _index(self, action_type):
         for i, param in enumerate(self.action_pipeline):
-            if param.action_type == action_type:
+            if param.action_type() == action_type:
                 return i
         return -1
 
     def _update_create_action(self, cls):
-        ind = self._index(cls.action_type)
-        if ind > -1:
-            return ind, self.action_pipeline[ind]
+        """
+        Assumption: Actions are not permutable
+        If the last action is identical, return it.
+        Else create a new action.
+        """
+        if len(self.action_pipeline) > 0 and self.action_pipeline[-1].action_type() == cls.action_type():
+            return self.action_pipeline[-1]
         else:
             params = cls()
             self.action_pipeline.append(params)
-            return -1, params
+            return params
+    
+    def concat_media(self):
+        self.clip_stop()
+        extensions = ['*.' + ext for ext in FILE_EXTENSION_VIDEO]
+        ext = "("
+        for e in extensions:
+            ext += e + " "
+        ext += ")"
 
+        file, _ = QFileDialog.getOpenFileName(self, "Open Media",
+                                              "", f"Files {ext}")
+        if file is not None:
+            params = self._update_create_action(ClipConcatParams)
+            params.file2 = file
+        self.process_clip()
+                
     def crop_media(self):
         self.clip_stop()
-        ind, params = self._update_create_action(ClipCropperParams)
-        self.dialog = ClipCropperDialog(clip=self.get_processed_clip(ind),
+        params = self._update_create_action(ClipCropperParams)
+        self.dialog = ClipCropperDialog(clip=self.get_processed_clip(),
                                         params=params,
                                         parent=self.parent)
         self.dialog.show()
@@ -93,8 +116,8 @@ class ClipEditorWidget(ClipViewerWidget):
 
     def zoom_media(self):
         self.clip_stop()
-        ind, params = self._update_create_action(ClipZoomParams)
-        self.dialog = ClipZoomDialog(clip=self.get_processed_clip(ind),
+        params = self._update_create_action(ClipZoomParams)
+        self.dialog = ClipZoomDialog(clip=self.get_processed_clip(),
                                      params=params,
                                      parent=self.parent)
         self.dialog.show()
@@ -102,27 +125,53 @@ class ClipEditorWidget(ClipViewerWidget):
 
     def rotate_image_90(self, orientation):
         self.clip_stop()
-        ind, params = self._update_create_action(ClipRotateParams)
+        params = self._update_create_action(ClipRotateParams)
         params.add_angle(90.0, orientation)
         self.process_clip()
 
     def flip_image(self, orientation):
         self.clip_stop()
-        ind, params = self._update_create_action(ClipFlipParams)
+        params = self._update_create_action(ClipFlipParams)
         params.add_flip(orientation)
         self.process_clip()
 
-    def change_brightness(self, value):
-        if value < -255 | value > 255:
-            return
-
-        self.clip_stop()
-        ind, params = self._update_create_action(ClipBrightnessParams)
-        params.set_brightness(value)
+    def timerEvent(self, event):
+        self.killTimer(self.timer_id)
+        self.timer_id = -1
+        self.orig_videoframe = None
         self.process_clip()
 
-    def change_contrast(self):
-        pass
+    def change_lum_contrast(self, lum, contrast):
+        if lum < -255 | lum > 255 | contrast < -255 | contrast > 255:
+            return
+        # Get the clip before this action
+        # (assumed to be the last action in the pipeline)
+        clip = self.get_processed_clip(len(self.action_pipeline) - 1)
+        if self.clip_reader.state() == PlayerState.PLAYING:
+            self.clip_stop()
+            self.orig_videoframe =  clip.get_frame(self.clip_reader.clock.time)
+        elif self.orig_videoframe is None:
+            self.orig_videoframe = clip.get_frame(self.clip_reader.clock.time)
+
+        # Get current frame and apply the bightness change
+
+        params = self._update_create_action(ClipLumContrastParams)
+        params.set_luminosity(lum)
+        params.set_contrast(contrast)
+
+        # Apply current transformation to pixmap
+        new_frame = params.process_im(self.orig_videoframe)
+        bytes_per_line = 3 * new_frame.shape[1]
+        qimage = QImage(new_frame.copy(),
+                        new_frame.shape[1],
+                        new_frame.shape[0], bytes_per_line,
+                        QImage.Format_RGB888)
+        _pixmap = QPixmap.fromImage(qimage)
+        self.label_movie.setPixmap(_pixmap)
+
+        if self.timer_id != -1:
+            self.killTimer(self.timer_id)
+        self.timer_id = self.startTimer(500)
 
     def process_clip(self):
         self.clip_stop()

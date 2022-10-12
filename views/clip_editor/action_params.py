@@ -1,6 +1,6 @@
 import moviepy.video.fx.all as vfx
 
-from nodes.base.dialog import ClipActionParams
+from nodes.dialogs.base import ClipActionParams
 
 
 class RotationOrientation(object):
@@ -15,10 +15,9 @@ class FlipOrientation(object):
 
 
 class ClipRotateParams(ClipActionParams):
-    action_type = "Rotate"
 
     def __init__(self, angle=0, name=None):
-        super().__init__(name=name, action_type=ClipRotateParams.action_type)
+        super().__init__(name=name if name else self.action_type())
         # in degrees, counter clockwise
         self.angle = angle
 
@@ -32,12 +31,15 @@ class ClipRotateParams(ClipActionParams):
         angle = angle if orientation == RotationOrientation.cw else -1.0 * angle
         self.angle += angle
 
+    @staticmethod
+    def action_type():
+        return "Rotate"
+
 
 class ClipFlipParams(ClipActionParams):
-    action_type = "Flip"
 
     def __init__(self, name=None):
-        super().__init__(name=name, action_type=ClipFlipParams.action_type)
+        super().__init__(name=name if name else self.action_type())
         # Horizontal Flip Flag
         self.mirror_x = False
         # Vertical Flip Falg
@@ -58,37 +60,38 @@ class ClipFlipParams(ClipActionParams):
         elif orientation == FlipOrientation.vertical:
             self.mirror_y = not self.mirror_y
 
-
-class ClipLuminosityParams(ClipActionParams):
-    action_type = "Luminosity"
-
-    def __init__(self, name=None):
-        super().__init__(name=name, action_type=ClipLuminosityParams.action_type)
-        # Horizontal Flip Flag
-        self.mirror_x = False
-        # Vertical Flip Falg
-        self.mirror_y = False
-
-    def process_clip(self, clip):
-        return clip.fx(vfx.lum_contrast, lum=1, contrast=1, contrast_thr=126)
+    @staticmethod
+    def action_type():
+        return "Flip"
 
 
-class ClipBrightnessParams(ClipActionParams):
-    action_type = "Brightness"
+class ClipLumContrastParams(ClipActionParams):
 
-    def __init__(self, value=0, name=None):
-        super().__init__(name=name, action_type=ClipBrightnessParams.action_type)
+    def __init__(self, lum = 0, contrast=0, name=None):
+        super().__init__(name=name if name else self.action_type())
         # Brightness
-        self.value = value
+        self.lum = lum
+        self.contrast = contrast
+        self.contrast_thr=128.
 
-    def set_brightness(self, value):
-        self.value = value
+    def set_luminosity(self, value):
+        self.lum = value
 
-    #
-    # def process_clip(self, clip):
-    #     def func(pic):
-    #         return np.maximum(0,np.minimum(255, (pic + self.value))).astype('uint8')
-    #     return clip.fl_image(func)
+    def set_contrast(self, value):
+        self.contrast = value
+
+    def process_im(self, im):
+        f = 259. * (self.contrast + 255.) / (255. * (259 - self.contrast))
+        frame = im.astype('float')
+        new_frame = f*(frame - self.contrast_thr) + self.contrast_thr + self.lum
+        new_frame[new_frame < 0] = 0
+        new_frame[new_frame > 255] = 255
+        return new_frame.astype('uint8')
 
     def process_clip(self, clip):
-        return clip.fx(vfx.colorx, factor=self.value)
+        return clip.fl_image(self.process_im)
+    @staticmethod
+    def action_type():
+        return "LuminosityContrast"
+
+

@@ -107,6 +107,9 @@ class ClipEditorWindow(QMainWindow):
         self.flip_vertical_act = QAction(QIcon(os.path.join(icon_path, "flip_vertical.png")), 'Flip Vertical', self)
         self.flip_vertical_act.triggered.connect(lambda: self.media_widget.flip_image(FlipOrientation.vertical))
 
+        self.concat_act = QAction(QIcon(os.path.join(icon_path, "concat.png")), 'Concatenate', self)
+        self.concat_act.triggered.connect(self.media_widget.concat_media)
+
         self.zoom_in_act = QAction(QIcon(os.path.join(icon_path, "zoom_in.png")), 'Zoom In', self)
         self.zoom_in_act.setShortcut('Ctrl++')
         self.zoom_in_act.triggered.connect(lambda: self.scale_image(1.25))
@@ -158,6 +161,7 @@ class ClipEditorWindow(QMainWindow):
         tool_menu = menu_bar.addMenu('Tools')
         tool_menu.addAction(self.crop_act)
         tool_menu.addAction(self.resize_act)
+        tool_menu.addAction(self.concat_act)
         tool_menu.addSeparator()
         tool_menu.addAction(self.rotate90_cw_act)
         tool_menu.addAction(self.rotate90_ccw_act)
@@ -186,6 +190,7 @@ class ClipEditorWindow(QMainWindow):
         tool_bar.addSeparator()
         tool_bar.addAction(self.crop_act)
         tool_bar.addAction(self.resize_act)
+        tool_bar.addAction(self.concat_act)
         tool_bar.addSeparator()
         tool_bar.addAction(self.rotate90_ccw_act)
         tool_bar.addAction(self.rotate90_cw_act)
@@ -207,14 +212,16 @@ class ClipEditorWindow(QMainWindow):
         self.brightness_slider.setRange(-255, 255)
         self.brightness_slider.setTickInterval(35)
         self.brightness_slider.setTickPosition(QSlider.TicksAbove)
-        self.brightness_slider.valueChanged.connect(self.media_widget.change_brightness)
+        self.brightness_slider.valueChanged.connect(lambda: self.media_widget.change_lum_contrast(self.brightness_slider.value(),
+                                                                                                self.contrast_slider.value()))
 
         contrast_label = QLabel("Contrast")
         self.contrast_slider = QSlider(Qt.Horizontal)
         self.contrast_slider.setRange(-255, 255)
         self.contrast_slider.setTickInterval(35)
         self.contrast_slider.setTickPosition(QSlider.TicksAbove)
-        self.contrast_slider.valueChanged.connect(self.media_widget.change_contrast)
+        self.contrast_slider.valueChanged.connect(lambda: self.media_widget.change_lum_contrast(self.brightness_slider.value(),
+                                                                                                self.contrast_slider.value()))
 
         # Set layout for dock widget
         editing_grid = QGridLayout()

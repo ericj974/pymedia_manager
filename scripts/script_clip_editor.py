@@ -15,7 +15,7 @@ argparser = argparse.ArgumentParser(description='Display tile view for images in
 argparser.add_argument('--file',
                        help='Input file image',
                        type=str,
-                       default=os.path.join(os.path.dirname(os.path.abspath(test_clips.__file__)), 'Poppy Field - 16453.mp4')
+                       default=os.path.join(os.path.dirname(os.path.abspath(test_clips.__file__)), 'woman-58142.mp4')
                        )
 
 # logging
