@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 
+import cv2
 import numpy as np
 from PIL import Image
 import piexif
@@ -20,6 +21,46 @@ user_comment_template = {
 # GPS -> Timezone
 TZWHERE = tzwhere.tzwhere()
 
+def QImageToCvMat(qimage : QImage):
+    '''  Converts a QImage into an opencv MAT format  '''
+
+    qimage = qimage.convertToFormat(QImage.Format.Format_RGB32)
+    ptr = qimage.constBits()
+    ptr.setsize(qimage.byteCount())
+    cv_im_in = np.array(ptr, copy=True).reshape(qimage.height(), qimage.width(), 4)
+    cv_im_in = cv2.cvtColor(cv_im_in, cv2.COLOR_BGRA2RGB)
+    return cv_im_in
+
+def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
+    # initialize the dimensions of the image to be resized and
+    # grab the image size
+    dim = None
+    (h, w) = image.shape[:2]
+
+    # if both the width and height are None, then return the
+    # original image
+    if width is None and height is None:
+        return image
+
+    # check to see if the width is None
+    if width is None:
+        # calculate the ratio of the height and construct the
+        # dimensions
+        r = height / float(h)
+        dim = (int(w * r), height)
+
+    # otherwise, the height is None
+    else:
+        # calculate the ratio of the width and construct the
+        # dimensions
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    # resize the image
+    resized = cv2.resize(image, dim, interpolation = inter)
+
+    # return the resized image
+    return resized
 
 def get_exif_v2(filepath):
     assert os.path.exists(filepath), 'File ' + filepath + 'does not exist'

@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QApplication
 from controller import MainController
 from model import MainModel
 from views.tileview.view import MainTileWindow
+from resources import test_pics
 
 argparser = argparse.ArgumentParser(description='Display tile view for images inside the specified folder')
 argparser.add_argument('--dir',

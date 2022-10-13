@@ -1,13 +1,13 @@
-from abc import ABC, abstractmethod
+import os
 
 import piexif
-from PIL import Image
 from PIL import ImageQt
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtGui import QImage, QPixmap, QTransform, QColor, qRgb, QPalette, QKeySequence
-from PyQt5.QtWidgets import QLabel, QRubberBand, QSizePolicy, QShortcut, QWidget
+from PyQt5.QtWidgets import QLabel, QRubberBand, QSizePolicy, QShortcut
 
 import utils
+from views.common import MediaWithMetadata
 
 
 class State:
@@ -15,34 +15,14 @@ class State:
     crop = "crop"
 
 
-class MediaWidget(QWidget):
-
-    def __init__(self, parent):
-        super().__init__(parent)
-
-    @abstractmethod
-    def open_media(self, file, **kwargs):
-        """ Open the media """
-        pass
-
-    @abstractmethod
-    def save_media(self, file, **kwargs):
-        """ Save the media """
-        pass
-
-    @abstractmethod
-    def reset(self):
-        """ Reset to default / no media state """
-
-
-
-class ImageLabel(QLabel, MediaWidget):
+class ImageLabel(QLabel, MediaWithMetadata):
     """Subclass of QLabel for displaying image"""
 
     def __init__(self, parent):
         super(QLabel, self).__init__(parent)
         self.parent = parent
 
+        self.file = ''
         self.qimage = QImage()
         self.original_image = self.qimage
 
@@ -69,13 +49,14 @@ class ImageLabel(QLabel, MediaWidget):
         self.setPixmap(QPixmap())
         self.original_image = self.qimage.copy()
 
-
     def open_media(self, file, **kwargs):
-        self.qimage, self.exif_dict = utils.load_image(file)
-        pixmap = QPixmap().fromImage(self.qimage)
-        self.setPixmap(pixmap)
-        # Keep a copy of the image
-        self.original_image = self.qimage.copy()
+        if os.path.exists(file) and os.path.isfile(file):
+            self.file = file
+            self.qimage, self.exif_dict = utils.load_image(file)
+            pixmap = QPixmap().fromImage(self.qimage)
+            self.setPixmap(pixmap)
+            # Keep a copy of the image
+            self.original_image = self.qimage.copy()
 
     def save_media(self, file, **kwargs):
         try:
@@ -88,6 +69,16 @@ class ImageLabel(QLabel, MediaWidget):
         # Need to use ImageQt to save metadata
         ImageQt.fromqimage(self.qimage).save(file, exif=exif_bytes, optimize=True, quality=95)
 
+    def load_comment(self):
+        user_comment = utils.get_exif_user_comment(self.file)
+        return user_comment
+
+    def save_comment(self, user_comment, file = None):
+        file = file if file else self.file
+        exif_dic = utils.get_exif_v2(self.file)
+        utils.update_user_comment(exif_dict=exif_dic, userdata=user_comment)
+        utils.save_exif(exif_dict=exif_dic, filepath=file)
+
     def clearImage(self):
         """ """
         pass
@@ -96,7 +87,7 @@ class ImageLabel(QLabel, MediaWidget):
         """Revert the image back to original image."""
         self.qimage = self.original_image
         self.setPixmap(QPixmap().fromImage(self.qimage))
-        self.parent.fitToWindow()
+        self.parent.fit_window()
         self.repaint()
 
     def resizeImage(self):
@@ -137,7 +128,7 @@ class ImageLabel(QLabel, MediaWidget):
             cropped = original_image.copy(rect_img)
             self.qimage = QImage(cropped)
             self.setPixmap(QPixmap().fromImage(cropped))
-            self.parent.fitToWindow()
+            self.parent.fit_window()
 
     def rotate_image_90(self, direction):
         """Rotate image 90º clockwise or counterclockwise."""
@@ -149,7 +140,7 @@ class ImageLabel(QLabel, MediaWidget):
 
             self.qimage = self.qimage.transformed(transform, mode=Qt.SmoothTransformation)
             self.setPixmap(QPixmap().fromImage(self.qimage))
-            self.parent.fitToWindow()
+            self.parent.fit_window()
         else:
             # No image to rotate
             pass
@@ -166,7 +157,7 @@ class ImageLabel(QLabel, MediaWidget):
 
             self.qimage = self.qimage.transformed(transform, mode=Qt.SmoothTransformation)
             self.setPixmap(QPixmap().fromImage(self.qimage))
-            self.parent.fitToWindow()
+            self.parent.fit_window()
         else:
             # No image to flip
             pass

@@ -81,6 +81,7 @@ class ClipLumContrastParams(ClipActionParams):
         self.contrast = value
 
     def process_im(self, im):
+        # See https://www.dfstudios.co.uk/articles/programming/image-programming-algorithms/image-processing-algorithms-part-5-contrast-adjustment/
         f = 259. * (self.contrast + 255.) / (255. * (259 - self.contrast))
         frame = im.astype('float')
         new_frame = f*(frame - self.contrast_thr) + self.contrast_thr + self.lum

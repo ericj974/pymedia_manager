@@ -39,6 +39,8 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self._files_to_process = None
         # Path -> widget dict
         self.media_widgets = {}
+        # Current selected file
+        self.file = ''
 
         # Tiles widget
         self.scrollArea = QtWidgets.QScrollArea(widgetResizable=True)
@@ -48,13 +50,13 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self.content_widget.setLayout(self._layout)
 
         # Side Comment widget
-        self.text_widget = UserCommentWidget()
-        self.text_widget.resize(self.size() * 1 / 4)
+        self.comment_widget = UserCommentWidget()
+        self.comment_widget.resize(self.size() * 1 / 4)
 
         # Set the central Widget
         self.layout = QHBoxLayout()
         self.layout.addWidget(self.scrollArea, 3)
-        self.layout.addWidget(self.text_widget, 1)
+        self.layout.addWidget(self.comment_widget, 1)
         self.central_widget = QtWidgets.QWidget()
         self.central_widget.setLayout(self.layout)
         self.setCentralWidget(self.central_widget)
@@ -82,7 +84,8 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self.setStatusBar(QStatusBar())
 
     def _save_user_comment(self):
-        self.text_widget.save_comment()
+        comment = self.comment_widget.get_comment()
+        self.media_widgets[self.file].save_comment(comment)
 
     def _delete_thumbnails(self):
         for file in self._model.files:
@@ -135,19 +138,20 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self.set_dirpath(dirpath)
 
     @pyqtSlot(str)
-    def on_selected_media_changed(self, filepath):
+    def on_selected_media_changed(self, file):
+        self.file = file
         # No more selected image
-        if filepath == '':
+        if file == '':
             return
         # Make sure we reload the selected filepath, in case the signal is emitted because the image has been modified
-        if filepath in self.media_widgets:
-            self.media_widgets[filepath].set_file(filepath)
-            self.media_widgets[filepath].scaledToWidth(self.scrollArea.size().width() / self.max_col)
+        if file in self.media_widgets:
+            self.media_widgets[file].open_media(file)
+            self.media_widgets[file].scaledToWidth(self.scrollArea.size().width() / self.max_col)
             # Scroll down to the selected image
-            posy = self.scrollArea.findChild(QtWidgets.QLabel, filepath).pos().y()
+            posy = self.scrollArea.findChild(QtWidgets.QLabel, file).pos().y()
             self.scrollArea.verticalScrollBar().setValue(posy)
             # Display the comment
-            self.text_widget.update_comment(self.media_widgets[filepath])
+            self.comment_widget.set_comment(self.media_widgets[file].load_comment(), file)
         else:
             # Seems like a file has been added (or a rename)
             self.update_dirpath_content()
@@ -168,7 +172,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
     @pyqtSlot(str)
     def on_watcher_file_changed(self, filepath):
-        self.media_widgets[filepath].set_file(filepath)
+        self.media_widgets[filepath].open_media(filepath)
         self.media_widgets[filepath].scaledToWidth(self.scrollArea.size().width() / self.max_col)
         self.repaint()
 

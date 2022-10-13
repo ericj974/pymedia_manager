@@ -1,13 +1,16 @@
 import os
 
+import face_recognition
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QSize, pyqtSlot
-from PyQt5.QtGui import QIcon, QPalette, QWheelEvent
+from PyQt5.QtCore import Qt, QSize, pyqtSlot, QRect
+from PyQt5.QtGui import QIcon, QPalette, QWheelEvent, QPainter, QColor, QPen, QPixmap
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction,
                              QSlider, QToolButton, QToolBar, QDockWidget, QMessageBox, QGridLayout,
-                             QScrollArea, QStatusBar, QFileDialog, QShortcut)
+                             QScrollArea, QStatusBar, QFileDialog, QShortcut, QListWidget, QVBoxLayout)
 
 from controller import MainController
+from utils import QImageToCvMat, image_resize
+from views.face_editor.widgets import FaceTagWidget
 from views.img_editor.widgets import ImageLabel, State
 from model import MainModel
 from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
@@ -17,7 +20,7 @@ from views.tileview.widgets import UserCommentWidget
 icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
 
-class PhotoEditorWindow(QMainWindow):
+class FaceEditorWindow(QMainWindow):
 
     def __init__(self, model: MainModel, controller: MainController):
         super().__init__()
@@ -32,14 +35,14 @@ class PhotoEditorWindow(QMainWindow):
         self.create_actions_shortcuts()
         self.create_menus()
         self.create_top_toolbar()
-        self.create_comment_tag_toolbar()
+        self.create_face_tag_toolbar()
         self.setAttribute(Qt.WA_DeleteOnClose, True)
         # listen for model event
         # Model Event - selected image has changed
         self._model.selected_media_changed.connect(self.on_media_path_changed)
 
         self.setMinimumSize(300, 200)
-        self.setWindowTitle("Photo Editor")
+        self.setWindowTitle("Face Editor")
         self.showMaximized()
         self.setStatusBar(QStatusBar())
         self.setVisible(False)
@@ -52,7 +55,6 @@ class PhotoEditorWindow(QMainWindow):
             else:
                 self.media_widget.reset()
                 self.setEnabled(False)
-
 
     @pyqtSlot(str)
     def on_media_path_changed(self, path):
@@ -69,55 +71,10 @@ class PhotoEditorWindow(QMainWindow):
         self.exit_act.setShortcut('Ctrl+Q')
         self.exit_act.triggered.connect(self.close)
 
-        # Actions for File menu
-        self.new_act = QAction(QIcon(os.path.join(icon_path, "new.png")), 'New...')
-
-        self.open_act = QAction(QIcon(os.path.join(icon_path, "open.png")), 'Open...', self)
-        self.open_act.setShortcut('Ctrl+O')
-        self.open_act.triggered.connect(lambda: self.open_media(""))
-
-        self.print_act = QAction(QIcon(os.path.join(icon_path, "print.png")), "Print...", self)
-        self.print_act.setShortcut('Ctrl+P')
-        # self.print_act.triggered.connect(self.printImage)
-        self.print_act.setEnabled(False)
-
         self.save_act = QAction(QIcon(os.path.join(icon_path, "save.png")), "Save...", self)
         self.save_act.setShortcut('Ctrl+S')
-        self.save_act.triggered.connect(self.save_media)
+        self.save_act.triggered.connect(self.save_metadata)
         self.save_act.setEnabled(False)
-
-        self.save_as_act = QAction("Save As...", self)
-        self.save_as_act.setShortcut('Ctrl+Shift+S')
-        self.save_as_act.triggered.connect(self.save_media_as)
-        self.save_as_act.setEnabled(False)
-
-        # Actions for Edit menu
-        self.revert_act = QAction("Revert to Original", self)
-        self.revert_act.triggered.connect(self.media_widget.revertToOriginal)
-        self.revert_act.setEnabled(False)
-
-        # Actions for Tools menu
-        self.crop_act = QAction(QIcon(os.path.join(icon_path, "crop.png")), "Crop", self)
-        self.crop_act.setShortcut('C')
-        self.crop_act.triggered.connect(lambda: self.media_widget.set_state(State.crop))
-
-        self.resize_act = QAction(QIcon(os.path.join(icon_path, "resize.png")), "Resize", self)
-        self.resize_act.setShortcut('Shift+Z')
-        self.resize_act.triggered.connect(self.media_widget.resizeImage)
-
-        self.rotate90_cw_act = QAction(QIcon(os.path.join(icon_path, "rotate90_cw.png")), 'Rotate 90º CW', self)
-        self.rotate90_cw_act.setShortcut('R')
-        self.rotate90_cw_act.triggered.connect(lambda: self.media_widget.rotate_image_90("cw"))
-
-        self.rotate90_ccw_act = QAction(QIcon(os.path.join(icon_path, "rotate90_ccw.png")), 'Rotate 90º CCW', self)
-        self.rotate90_ccw_act.setShortcut('Shift+R')
-        self.rotate90_ccw_act.triggered.connect(lambda: self.media_widget.rotate_image_90("ccw"))
-
-        self.flip_horizontal = QAction(QIcon(os.path.join(icon_path, "flip_horizontal.png")), 'Flip Horizontal', self)
-        self.flip_horizontal.triggered.connect(lambda: self.media_widget.flip_image("horizontal"))
-
-        self.flip_vertical = QAction(QIcon(os.path.join(icon_path, "flip_vertical.png")), 'Flip Vertical', self)
-        self.flip_vertical.triggered.connect(lambda: self.media_widget.flip_image('vertical'))
 
         self.zoom_in_act = QAction(QIcon(os.path.join(icon_path, "zoom_in.png")), 'Zoom In', self)
         self.zoom_in_act.setShortcut('Ctrl++')
@@ -141,13 +98,9 @@ class PhotoEditorWindow(QMainWindow):
         self.fit_to_window_act.setCheckable(True)
         self.fit_to_window_act.setChecked(True)
 
-        self.detect_faces_act = QAction("Detect Faces", self)
+        self.detect_faces_act = QAction((QIcon(os.path.join(icon_path, "detect_faces.png"))), "Detect Faces", self)
         self.detect_faces_act.triggered.connect(self._detect_faces)
 
-        # And the shortcuts
-        QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_media)
-        QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_media)
-        QShortcut(QtCore.Qt.Key.Key_Delete, self, self._controller.delete_cur_media)
 
     def create_menus(self):
         """Set up the menubar."""
@@ -155,33 +108,21 @@ class PhotoEditorWindow(QMainWindow):
         menu_bar.setNativeMenuBar(False)
 
         # Create Photo Editor menu and add actions
-        main_menu = menu_bar.addMenu('Photo Editor')
+        main_menu = menu_bar.addMenu('Face Editor')
         main_menu.addAction(self.about_act)
         main_menu.addSeparator()
         main_menu.addAction(self.exit_act)
 
         # Create file menu and add actions
         file_menu = menu_bar.addMenu('File')
-        file_menu.addAction(self.open_act)
         file_menu.addAction(self.save_act)
-        file_menu.addAction(self.save_as_act)
-        file_menu.addSeparator()
-        file_menu.addAction(self.print_act)
         file_menu.addSeparator()
         file_menu.addAction(self.exit_act)
 
         edit_menu = menu_bar.addMenu('Edit')
-        edit_menu.addAction(self.revert_act)
+        # edit_menu.addAction(self.revert_act)
 
         tool_menu = menu_bar.addMenu('Tools')
-        tool_menu.addAction(self.crop_act)
-        tool_menu.addAction(self.resize_act)
-        tool_menu.addSeparator()
-        tool_menu.addAction(self.rotate90_cw_act)
-        tool_menu.addAction(self.rotate90_ccw_act)
-        tool_menu.addAction(self.flip_horizontal)
-        tool_menu.addAction(self.flip_vertical)
-        tool_menu.addSeparator()
         tool_menu.addAction(self.zoom_in_act)
         tool_menu.addAction(self.zoom_out_act)
         tool_menu.addAction(self.normal_size_act)
@@ -200,86 +141,40 @@ class PhotoEditorWindow(QMainWindow):
         self.addToolBar(tool_bar)
 
         # Add actions to the toolbar
-        tool_bar.addAction(self.open_act)
-        tool_bar.addAction(self.save_act)
-        tool_bar.addAction(self.print_act)
-        tool_bar.addAction(self.exit_act)
-        tool_bar.addSeparator()
-        tool_bar.addAction(self.crop_act)
-        tool_bar.addAction(self.resize_act)
-        tool_bar.addSeparator()
-        tool_bar.addAction(self.rotate90_ccw_act)
-        tool_bar.addAction(self.rotate90_cw_act)
-        tool_bar.addAction(self.flip_horizontal)
-        tool_bar.addAction(self.flip_vertical)
-        tool_bar.addSeparator()
-        tool_bar.addAction(self.zoom_in_act)
-        tool_bar.addAction(self.zoom_out_act)
+        tool_bar.addAction(self.detect_faces_act)
 
-    def create_comment_tag_toolbar(self):
-        tag_dock_widget = QDockWidget("Comments / Tags")
-        self.comment_toolbar = UserCommentWidget()
-        tag_dock_widget.setWidget(self.comment_toolbar)
+    def create_face_tag_toolbar(self):
+        tag_dock_widget = QDockWidget("Face Tags")
+        self.face_tag_toolbar = FaceTagWidget()
+        tag_dock_widget.setWidget(self.face_tag_toolbar)
         self.addDockWidget(Qt.RightDockWidgetArea, tag_dock_widget)
-
 
     def create_editing_bar(self):
         """Create dock widget for editing tools."""
         # TODO: Add a tab widget for the different editing tools
-        self.editing_bar = QDockWidget("Tools")
+        self.editing_bar = QDockWidget("Detection")
         self.editing_bar.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.editing_bar.setMinimumWidth(90)
 
-        convert_to_grayscale = QToolButton()
-        convert_to_grayscale.setIcon(QIcon(os.path.join(icon_path, "grayscale.png")))
-        convert_to_grayscale.clicked.connect(self.media_widget.convertToGray)
 
-        convert_to_RGB = QToolButton()
-        convert_to_RGB.setIcon(QIcon(os.path.join(icon_path, "rgb.png")))
-        convert_to_RGB.clicked.connect(self.media_widget.convertToRGB)
+        self.detection_widget = QListWidget()
+        self.scroll_detection = QScrollArea()
+        self.scroll_detection.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll_detection.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll_detection.setWidgetResizable(True)
+        self.scroll_detection.setWidget(self.detection_widget)
 
-        convert_to_sepia = QToolButton()
-        convert_to_sepia.setIcon(QIcon(os.path.join(icon_path, "sepia.png")))
-        convert_to_sepia.clicked.connect(self.media_widget.convertToSepia)
-
-        change_hue = QToolButton()
-        change_hue.setIcon(QIcon(os.path.join(icon_path, "")))
-        change_hue.clicked.connect(self.media_widget.changeHue)
-
-        brightness_label = QLabel("Brightness")
-        self.brightness_slider = QSlider(Qt.Horizontal)
-        self.brightness_slider.setRange(-255, 255)
-        self.brightness_slider.setTickInterval(35)
-        self.brightness_slider.setTickPosition(QSlider.TicksAbove)
-        self.brightness_slider.valueChanged.connect(self.media_widget.changeBrighteness)
-
-        contrast_label = QLabel("Contrast")
-        self.contrast_slider = QSlider(Qt.Horizontal)
-        self.contrast_slider.setRange(-255, 255)
-        self.contrast_slider.setTickInterval(35)
-        self.contrast_slider.setTickPosition(QSlider.TicksAbove)
-        self.contrast_slider.valueChanged.connect(self.media_widget.changeContrast)
 
         # Set layout for dock widget
-        editing_grid = QGridLayout()
-        # editing_grid.addWidget(filters_label, 0, 0, 0, 2, Qt.AlignTop)
-        editing_grid.addWidget(convert_to_grayscale, 1, 0)
-        editing_grid.addWidget(convert_to_RGB, 1, 1)
-        editing_grid.addWidget(convert_to_sepia, 2, 0)
-        editing_grid.addWidget(change_hue, 2, 1)
-        editing_grid.addWidget(brightness_label, 3, 0)
-        editing_grid.addWidget(self.brightness_slider, 4, 0, 1, 0)
-        editing_grid.addWidget(contrast_label, 5, 0)
-        editing_grid.addWidget(self.contrast_slider, 6, 0, 1, 0)
-        editing_grid.setRowStretch(7, 10)
+        vlay = QVBoxLayout()
+        vlay.addWidget(QLabel("Detection Results"))
+        vlay.addWidget(self.scroll_detection)
 
         container = QWidget()
-        container.setLayout(editing_grid)
+        container.setLayout(vlay)
 
         self.editing_bar.setWidget(container)
-
         self.addDockWidget(Qt.LeftDockWidgetArea, self.editing_bar)
-
         self.tools_menu_act = self.editing_bar.toggleViewAction()
 
     def create_main_label(self):
@@ -295,16 +190,32 @@ class PhotoEditorWindow(QMainWindow):
         self.resize(QApplication.primaryScreen().availableSize() * 3 / 5)
 
     def update_actions(self):
-        """Update the values of menu and toolbar items when an image 
+        """Update the values of menu and toolbar items when an image
         is loaded."""
         self.save_act.setEnabled(True)
-        self.revert_act.setEnabled(True)
-        self.zoom_in_act.setEnabled(True)
-        self.zoom_out_act.setEnabled(True)
-        self.normal_size_act.setEnabled(True)
 
     def _detect_faces(self):
-        pass
+        frame = QImageToCvMat(self.media_widget.qimage)
+        if frame.shape[0] > frame.shape[1]:
+            frame = image_resize(frame, height=800)
+        else:
+            frame = image_resize(frame, width=800)
+        face_locations = face_recognition.face_locations(frame)
+        face_encodings = face_recognition.face_encodings(frame, face_locations)
+        face_names = ["Unknown" for _ in face_encodings]
+        r = int(self.media_widget.qimage.height() / frame.shape[0] )
+        painter = QPainter(self.media_widget.qimage)
+        penRectangle = QPen(QtCore.Qt.red)
+        penRectangle.setWidth(10)
+        painter.setPen(penRectangle)
+        for (top, right, bottom, left), name in zip(face_locations, face_names):
+            top *= r
+            right *= r
+            bottom *= r
+            left *= r
+            painter.drawRect(left, top, right-left, bottom-top)
+        self.media_widget.setPixmap(QPixmap().fromImage(self.media_widget.qimage))
+        painter.end()
 
     def open_media(self, file=""):
         """Load a new media"""
@@ -328,10 +239,9 @@ class PhotoEditorWindow(QMainWindow):
 
         if file:
             self.media_widget.open_media(file)
-            self.comment_toolbar.set_comment(self.media_widget.load_comment(), file)
+            self.face_tag_toolbar.set_tags(self.media_widget.load_comment(), file)
             self.cumul_scale_factor = 1
             self.scroll_area.setVisible(True)
-            self.print_act.setEnabled(True)
             self.fit_to_window_act.setEnabled(True)
             self.update_actions()
 
@@ -339,9 +249,6 @@ class PhotoEditorWindow(QMainWindow):
                 self.media_widget.adjustSize()
             else:
                 self.fit_window()
-
-            # Reset all sliders
-            self.brightness_slider.setValue(0)
 
         elif file == "":
             # User selected Cancel
@@ -351,28 +258,11 @@ class PhotoEditorWindow(QMainWindow):
                                     "Unable to open image.", QMessageBox.Ok)
         return True
 
-    def save_media_as(self):
-        """Save the image displayed in the label."""
-        if not self.media_widget.qimage.isNull():
-            image_file, _ = QFileDialog.getSaveFileName(self, "Save Image",
-                                                        "", "PNG Files (*.png);;JPG Files (*.jpeg *.jpg );;Bitmap Files (*.bmp);;\
-                    GIF Files (*.gif)")
-
-            if image_file and not self.media_widget.qimage.isNull():
-                self.media_widget.save_media(image_file)
-                self.media_widget.save_comment(self.comment_toolbar.get_comment(), file=image_file)
-            else:
-                QMessageBox.information(self, "Error",
-                                        "Unable to save image.", QMessageBox.Ok)
-        else:
-            QMessageBox.information(self, "Empty Image",
-                                    "There is no image to save.", QMessageBox.Ok)
-
-    def save_media(self):
+    def save_metadata(self):
         """Save the image displayed in the label."""
         if not self.media_widget.qimage.isNull():
             self.media_widget.save_media(self._model.media_path)
-            self.media_widget.save_comment(self.comment_toolbar.get_comment())
+            self.media_widget.save_comment(self.face_tag_toolbar.get_tags())
         else:
             QMessageBox.information(self, "Empty Image",
                                     "There is no image to save.", QMessageBox.Ok)
@@ -411,8 +301,8 @@ class PhotoEditorWindow(QMainWindow):
         scroll_bar.setValue(int(factor * scroll_bar.value() + ((factor - 1) * scroll_bar.pageStep() / 2)))
 
     def aboutDialog(self):
-        QMessageBox.about(self, "About Photo Editor",
-                          "Photo Editor\nVersion 0.2\n\nCreated by Joshua Willman")
+        QMessageBox.about(self, "About Face Editor",
+                          "Face Editor\nVersion 0.9\n\nCreated by Joshua Willman")
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         if QApplication.keyboardModifiers() == Qt.ControlModifier:
