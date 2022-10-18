@@ -70,13 +70,13 @@ class ImageLabel(QLabel, MediaWithMetadata):
         ImageQt.fromqimage(self.qimage).save(file, exif=exif_bytes, optimize=True, quality=95)
 
     def load_comment(self):
-        user_comment = utils.get_exif_user_comment(self.file)
+        user_comment = utils.ImageUserComment.load_from_file(self.file)
         return user_comment
 
     def save_comment(self, user_comment, file = None):
         file = file if file else self.file
         exif_dic = utils.get_exif_v2(self.file)
-        utils.update_user_comment(exif_dict=exif_dic, userdata=user_comment)
+        user_comment.update_exif(exif_dic)
         utils.save_exif(exif_dict=exif_dic, filepath=file)
 
     def clearImage(self):

@@ -328,7 +328,7 @@ class PhotoEditorWindow(QMainWindow):
 
         if file:
             self.media_widget.open_media(file)
-            self.comment_toolbar.set_comment(self.media_widget.load_comment(), file)
+            self.comment_toolbar.update_from_comment(self.media_widget.load_comment(), file)
             self.cumul_scale_factor = 1
             self.scroll_area.setVisible(True)
             self.print_act.setEnabled(True)

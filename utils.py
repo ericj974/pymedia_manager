@@ -4,16 +4,16 @@ import os
 
 import cv2
 import numpy as np
-from PIL import Image
 import piexif
 import piexif.helper
 import pytz
+from PIL import Image
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QTransform, qRgb
-
 from tzwhere import tzwhere
 
 user_comment_template = {
+    'persons': [],  # name. We don't keep the position in the picture
     'tags': [],
     'comments': ""
 }
@@ -21,7 +21,81 @@ user_comment_template = {
 # GPS -> Timezone
 TZWHERE = tzwhere.tzwhere()
 
-def QImageToCvMat(qimage : QImage):
+
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class ImageUserComment(object):
+    def __init__(self, persons=None, tags=None, comments=''):
+
+        persons = persons if persons else []
+        tags = tags if tags else []
+
+        self._user_comment = user_comment_template.copy()
+        self.persons = persons
+        self.tags = tags
+        self.comments = comments
+
+    @property
+    def persons(self):
+        return self._user_comment['persons']
+
+    @persons.setter
+    def persons(self, value):
+        self._user_comment['persons'] = value
+
+    @property
+    def tags(self):
+        return self._user_comment['persons']
+
+    @tags.setter
+    def tags(self, value):
+        self._user_comment['persons'] = value
+
+    @property
+    def comments(self):
+        return self._user_comment['comments']
+
+    @comments.setter
+    def comments(self, value):
+        self._user_comment['comments'] = value
+
+    def to_dict(self):
+        return self._user_comment
+
+    def update_exif(self, exif_dict):
+        update_user_comment(exif_dict, self.to_dict())
+
+    @staticmethod
+    def from_dict(user_comment_dic):
+        user_comment = ImageUserComment()
+        user_comment._user_comment.update(user_comment_dic)
+        return user_comment
+
+    @staticmethod
+    def load_from_file(file):
+        exif_dict = get_exif_v2(file)
+        if piexif.ExifIFD.UserComment in exif_dict["Exif"]:
+            try:
+                user_comment_dic = piexif.helper.UserComment.load(exif_dict["Exif"][piexif.ExifIFD.UserComment])
+                user_comment_dic = json.loads(user_comment_dic)
+                return ImageUserComment.from_dict(user_comment_dic)
+            except:
+                return ImageUserComment()
+        return ImageUserComment()
+
+    @staticmethod
+    def create_item(persons=None, tags=None, comments=''):
+        return ImageUserComment(persons, tags, comments)
+
+
+def QImageToCvMat(qimage: QImage):
     '''  Converts a QImage into an opencv MAT format  '''
 
     qimage = qimage.convertToFormat(QImage.Format.Format_RGB32)
@@ -31,7 +105,8 @@ def QImageToCvMat(qimage : QImage):
     cv_im_in = cv2.cvtColor(cv_im_in, cv2.COLOR_BGRA2RGB)
     return cv_im_in
 
-def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
+
+def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     # initialize the dimensions of the image to be resized and
     # grab the image size
     dim = None
@@ -57,10 +132,11 @@ def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
         dim = (width, int(h * r))
 
     # resize the image
-    resized = cv2.resize(image, dim, interpolation = inter)
+    resized = cv2.resize(image, dim, interpolation=inter)
 
     # return the resized image
     return resized
+
 
 def get_exif_v2(filepath):
     assert os.path.exists(filepath), 'File ' + filepath + 'does not exist'
@@ -279,9 +355,9 @@ def load_image(file):
     if "0th" in exif_dict and piexif.ImageIFD.Orientation in exif_dict["0th"]:
         orientation = exif_dict["0th"].pop(piexif.ImageIFD.Orientation)
         transforms = []
-        if orientation == 2: # Flip left / right
+        if orientation == 2:  # Flip left / right
             transforms = [QTransform().scale(1, -1)]
-        elif orientation == 3: # rotate 180
+        elif orientation == 3:  # rotate 180
             transforms = [QTransform().rotate(180)]
         elif orientation == 4:
             transforms = [QTransform().rotate(180), QTransform().scale(1, -1)]
@@ -298,7 +374,9 @@ def load_image(file):
             qimage = qimage.transformed(t, mode=Qt.SmoothTransformation)
     return qimage, exif_dict
 
+
 gray_color_table = [qRgb(i, i, i) for i in range(256)]
+
 
 def toQImage(im, copy=False):
     if im is None:

@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction
 
 from controller import MainController
 from utils import QImageToCvMat, image_resize
-from views.face_editor.widgets import FaceTagWidget
+from views.face_editor.widgets import FaceTagWidget, FaceDetectionWidget
 from views.img_editor.widgets import ImageLabel, State
 from model import MainModel
 from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
@@ -22,13 +22,14 @@ icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
 class FaceEditorWindow(QMainWindow):
 
-    def __init__(self, model: MainModel, controller: MainController):
+    def __init__(self, model: MainModel, controller: MainController, db_folder):
         super().__init__()
 
         self._model = model
         self._controller = controller
-
+        self._db_folder = db_folder
         self.cumul_scale_factor = 1
+        self.file = ''
 
         self.create_main_label()
         self.create_editing_bar()
@@ -145,8 +146,8 @@ class FaceEditorWindow(QMainWindow):
 
     def create_face_tag_toolbar(self):
         tag_dock_widget = QDockWidget("Face Tags")
-        self.face_tag_toolbar = FaceTagWidget()
-        tag_dock_widget.setWidget(self.face_tag_toolbar)
+        self.face_tag_widget = FaceTagWidget()
+        tag_dock_widget.setWidget(self.face_tag_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, tag_dock_widget)
 
     def create_editing_bar(self):
@@ -156,24 +157,9 @@ class FaceEditorWindow(QMainWindow):
         self.editing_bar.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.editing_bar.setMinimumWidth(90)
 
-
-        self.detection_widget = QListWidget()
-        self.scroll_detection = QScrollArea()
-        self.scroll_detection.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.scroll_detection.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll_detection.setWidgetResizable(True)
-        self.scroll_detection.setWidget(self.detection_widget)
-
-
-        # Set layout for dock widget
-        vlay = QVBoxLayout()
-        vlay.addWidget(QLabel("Detection Results"))
-        vlay.addWidget(self.scroll_detection)
-
-        container = QWidget()
-        container.setLayout(vlay)
-
-        self.editing_bar.setWidget(container)
+        self.detection_widget = FaceDetectionWidget(db_folder=self._db_folder)
+        self.detection_widget.result_widget.clicked.connect(self.on_table_double_clicked)
+        self.editing_bar.setWidget(self.detection_widget )
         self.addDockWidget(Qt.LeftDockWidgetArea, self.editing_bar)
         self.tools_menu_act = self.editing_bar.toggleViewAction()
 
@@ -195,25 +181,25 @@ class FaceEditorWindow(QMainWindow):
         self.save_act.setEnabled(True)
 
     def _detect_faces(self):
-        frame = QImageToCvMat(self.media_widget.qimage)
-        if frame.shape[0] > frame.shape[1]:
-            frame = image_resize(frame, height=800)
-        else:
-            frame = image_resize(frame, width=800)
-        face_locations = face_recognition.face_locations(frame)
-        face_encodings = face_recognition.face_encodings(frame, face_locations)
-        face_names = ["Unknown" for _ in face_encodings]
-        r = int(self.media_widget.qimage.height() / frame.shape[0] )
+        self.detection_widget._detect_faces(self.media_widget.original_image.copy())
+        self.display_detection()
+
+    def display_detection(self, selected_ind = -1):
         painter = QPainter(self.media_widget.qimage)
-        penRectangle = QPen(QtCore.Qt.red)
-        penRectangle.setWidth(10)
-        painter.setPen(penRectangle)
-        for (top, right, bottom, left), name in zip(face_locations, face_names):
-            top *= r
-            right *= r
-            bottom *= r
-            left *= r
-            painter.drawRect(left, top, right-left, bottom-top)
+
+
+        pen_red = QPen(QtCore.Qt.red)
+        pen_red.setWidth(10)
+        pen_blue = QPen(QtCore.Qt.blue)
+        pen_blue.setWidth(10)
+        painter.setPen(pen_blue)
+        for i, ((top, right, bottom, left), name) in enumerate(zip(self.detection_widget.face_locations, self.detection_widget.face_names)):
+            if i == selected_ind:
+                painter.setPen(pen_red)
+                painter.drawRect(left, top, right - left, bottom - top)
+                painter.setPen(pen_blue)
+            else:
+                painter.drawRect(left, top, right-left, bottom-top)
         self.media_widget.setPixmap(QPixmap().fromImage(self.media_widget.qimage))
         painter.end()
 
@@ -238,8 +224,10 @@ class FaceEditorWindow(QMainWindow):
         self.setEnabled(True)
 
         if file:
+            self.file = file
             self.media_widget.open_media(file)
-            self.face_tag_toolbar.set_tags(self.media_widget.load_comment(), file)
+            self.face_tag_widget.update_from_comment(self.media_widget.load_comment())
+            self.detection_widget.set_file(file)
             self.cumul_scale_factor = 1
             self.scroll_area.setVisible(True)
             self.fit_to_window_act.setEnabled(True)
@@ -262,7 +250,7 @@ class FaceEditorWindow(QMainWindow):
         """Save the image displayed in the label."""
         if not self.media_widget.qimage.isNull():
             self.media_widget.save_media(self._model.media_path)
-            self.media_widget.save_comment(self.face_tag_toolbar.get_tags())
+            self.media_widget.save_comment(self.face_tag_widget.get_tags())
         else:
             QMessageBox.information(self, "Empty Image",
                                     "There is no image to save.", QMessageBox.Ok)
@@ -333,3 +321,7 @@ class FaceEditorWindow(QMainWindow):
 
     def closeEvent(self, event):
         pass
+
+    def on_table_double_clicked(self, index):
+        row = index.row()
+        self.display_detection(row)

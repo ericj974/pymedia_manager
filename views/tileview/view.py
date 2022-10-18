@@ -151,7 +151,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
             posy = self.scrollArea.findChild(QtWidgets.QLabel, file).pos().y()
             self.scrollArea.verticalScrollBar().setValue(posy)
             # Display the comment
-            self.comment_widget.set_comment(self.media_widgets[file].load_comment(), file)
+            self.comment_widget.update_from_comment(self.media_widgets[file].load_comment(), file)
         else:
             # Seems like a file has been added (or a rename)
             self.update_dirpath_content()

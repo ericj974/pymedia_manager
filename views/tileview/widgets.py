@@ -20,28 +20,31 @@ class UserCommentWidget(QtWidgets.QWidget):
         self.title = QtWidgets.QLabel()
         self.text_widget = QtWidgets.QTextEdit()
         self.tags_widget = QtWidgets.QTextEdit()
+        self.persons_widget = QtWidgets.QTextEdit()
         vlay.addWidget(self.title)
         vlay.addWidget(self.text_widget, 3)
         vlay.addWidget(QtWidgets.QLabel("Tags"))
         vlay.addWidget(self.tags_widget, 1)
+        vlay.addWidget(QtWidgets.QLabel("Persons"))
+        vlay.addWidget(self.persons_widget, 1)
 
-    def set_comment(self, user_comment, file = None):
-        if 'comments' in user_comment:
-            self.text_widget.setText(user_comment['comments'])
-        if 'tags' in user_comment:
-            text = ""
-            for tag in user_comment['tags']:
-                text += tag + " "
-            self.tags_widget.setText(text)
+    def update_from_comment(self, user_comment, file = None):
+        self.text_widget.setText(user_comment.comments)
+        text = ""
+        for tag in user_comment.tags:
+            text += tag + " "
+        self.tags_widget.setText(text)
+        text = ""
+        for tag in user_comment.persons:
+            text += tag + " "
+        self.persons_widget.setText(text)
         if file:
             self.title.setText(os.path.basename(file))
 
     def get_comment(self):
-        user_comment = {
-            'comments': self.text_widget.toPlainText(),
-            'tags': self.tags_widget.toPlainText().split()
-        }
-        return user_comment
+        return utils.ImageUserComment(comments=self.text_widget.toPlainText(),
+                                      tags=self.tags_widget.toPlainText().split(),
+                                      persons=self.persons_widget.toPlainText().split())
 
 
 class ImageWidget(QtWidgets.QLabel, MediaWithMetadata):
@@ -75,14 +78,12 @@ class ImageWidget(QtWidgets.QLabel, MediaWithMetadata):
         pass
 
     def load_comment(self):
-        user_comment = utils.get_exif_user_comment(self.file)
-        if user_comment is None:
-            user_comment = {'tags': [], 'comments': ''}
+        user_comment = utils.ImageUserComment.load_from_file(self.file)
         return user_comment
 
     def save_comment(self, user_comment, file = None):
         exif_dic = utils.get_exif_v2(self.file)
-        utils.update_user_comment(exif_dict=exif_dic, userdata=user_comment)
+        user_comment.update_exif(exif_dic)
         utils.save_exif(exif_dict=exif_dic, filepath=self.file)
 
 

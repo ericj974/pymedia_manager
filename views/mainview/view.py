@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import *
 
 from views.clip_editor.view import ClipEditorWindow
 from controller import MainController
+from views.face_editor.view import FaceEditorWindow
 from views.gps.view import MainGPSWindow
 from views.img_editor.view import PhotoEditorWindow
 from views.mainview import gui
@@ -12,7 +13,7 @@ from model import MainModel
 from views.renamer import nameddic
 from views.renamer.view import MainRenamerWindow
 from views.tileview.view import MainTileWindow
-
+from settings import DB_FOLDER
 
 class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
@@ -42,6 +43,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.pushButton_editor_vid.clicked.connect(partial(self.launch_editor_vid, True))
         self.pushButton_tileview.clicked.connect(self.launch_tile_view)
         self.pushButton_gps.clicked.connect(self.launch_gps_window)
+        self.pushButton_editor_face.clicked.connect(self.launch_editor_face)
 
         # Connect the drop
         self.__class__.dragEnterEvent = self.dragEnterEvent
@@ -55,8 +57,10 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.editor_vid_window = None
         # Tile view
         self.tile_window = None
-        # # GPS Dialog
+        # GPS Dialog
         self.gps_window = None
+        # Face editor Dialog
+        self.face_editor = None
 
     def launch_renamer(self):
         def _on_destroyed():
@@ -112,6 +116,15 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
             self.gps_window.destroyed.connect(_on_destroyed)
         self.gps_window.set_dirpath(self._model.dirpath)
         self.gps_window.show()
+
+    def launch_editor_face(self):
+        def _on_destroyed():
+            self.face_editor = None
+
+        if not self.face_editor:
+            self.face_editor = FaceEditorWindow(model=self._model, controller=self._controller, db_folder=DB_FOLDER)
+            self.face_editor.destroyed.connect(_on_destroyed)
+        self.face_editor.show()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
