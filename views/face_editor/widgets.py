@@ -1,8 +1,10 @@
 import face_recognition
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt, QEvent
+import numpy as np
+
+from PyQt5 import QtWidgets, QtGui
+from PyQt5.QtCore import Qt, QEvent, QItemSelectionModel
 from PyQt5.QtWidgets import QVBoxLayout, QListWidget, QLineEdit, \
-    QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton
+    QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton, QAbstractItemView
 
 from utils import QImageToCvMat, image_resize
 from views.face_editor.utils import FaceDetectionDB
@@ -53,6 +55,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
 
         # Detection part
         self.result_widget = QListWidget()
+        # self.result_widget.setSelectionModel(QtGui.QItem)
         self.result_widget.installEventFilter(self)
         self.scroll_detection = QScrollArea()
         self.scroll_detection.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -116,10 +119,13 @@ class FaceDetectionWidget(QtWidgets.QWidget):
             matches = face_recognition.compare_faces(self.db.known_face_encodings, face_encoding)
             name = unknown_tag
 
-            # If a match was found in known_face_encodings, just use the first one.
+            # If a match was found in known_face_encodings, select the on with the lowest distance
             if True in matches:
-                first_match_index = matches.index(True)
-                name = self.db.known_face_names[first_match_index]
+                known_face_encodings = np.array(self.db.known_face_encodings)[matches]
+                known_face_names = np.array(self.db.known_face_names)[matches]
+                face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+                best_match_index = np.argmin(face_distances)
+                name = known_face_names[best_match_index]
             self.face_names.append(name)
 
         # Show in list widget
@@ -139,6 +145,13 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.result_widget.clear()
         self.result_widget.addItems(self.face_names)
         self.result_widget.installEventFilter(self)
+
+    def clear(self):
+        self.face_locations = []
+        self.face_encodings = []
+        self.face_names = []
+        self.face_imgs = []
+        self.update_det_result_display()
 
     def save_tag_to_db(self):
         if len(self.result_widget.selectedItems()) > 0 and self.result_widget.currentItem().text() != unknown_tag:

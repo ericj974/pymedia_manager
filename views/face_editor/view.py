@@ -102,6 +102,10 @@ class FaceEditorWindow(QMainWindow):
         self.detect_faces_act = QAction((QIcon(os.path.join(icon_path, "detect_faces.png"))), "Detect Faces", self)
         self.detect_faces_act.triggered.connect(self._detect_faces)
 
+        # And the shortcuts
+        QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_media)
+        QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_media)
+        QShortcut(QtCore.Qt.Key.Key_Delete, self, self._controller.delete_cur_media)
 
     def create_menus(self):
         """Set up the menubar."""
@@ -146,8 +150,8 @@ class FaceEditorWindow(QMainWindow):
 
     def create_face_tag_toolbar(self):
         tag_dock_widget = QDockWidget("Face Tags")
-        self.face_tag_widget = FaceTagWidget()
-        tag_dock_widget.setWidget(self.face_tag_widget)
+        self.img_person_tag_widget = FaceTagWidget()
+        tag_dock_widget.setWidget(self.img_person_tag_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, tag_dock_widget)
 
     def create_editing_bar(self):
@@ -157,9 +161,9 @@ class FaceEditorWindow(QMainWindow):
         self.editing_bar.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.editing_bar.setMinimumWidth(90)
 
-        self.detection_widget = FaceDetectionWidget(db_folder=self._db_folder)
-        self.detection_widget.result_widget.clicked.connect(self.on_table_double_clicked)
-        self.editing_bar.setWidget(self.detection_widget )
+        self.det_face_widget = FaceDetectionWidget(db_folder=self._db_folder)
+        self.det_face_widget.result_widget.clicked.connect(self.on_table_double_clicked)
+        self.editing_bar.setWidget(self.det_face_widget)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.editing_bar)
         self.tools_menu_act = self.editing_bar.toggleViewAction()
 
@@ -181,7 +185,7 @@ class FaceEditorWindow(QMainWindow):
         self.save_act.setEnabled(True)
 
     def _detect_faces(self):
-        self.detection_widget._detect_faces(self.media_widget.original_image.copy())
+        self.det_face_widget._detect_faces(self.media_widget.original_image.copy())
         self.display_detection()
 
     def display_detection(self, selected_ind = -1):
@@ -193,7 +197,7 @@ class FaceEditorWindow(QMainWindow):
         pen_blue = QPen(QtCore.Qt.blue)
         pen_blue.setWidth(10)
         painter.setPen(pen_blue)
-        for i, ((top, right, bottom, left), name) in enumerate(zip(self.detection_widget.face_locations, self.detection_widget.face_names)):
+        for i, ((top, right, bottom, left), name) in enumerate(zip(self.det_face_widget.face_locations, self.det_face_widget.face_names)):
             if i == selected_ind:
                 painter.setPen(pen_red)
                 painter.drawRect(left, top, right - left, bottom - top)
@@ -226,8 +230,9 @@ class FaceEditorWindow(QMainWindow):
         if file:
             self.file = file
             self.media_widget.open_media(file)
-            self.face_tag_widget.update_from_comment(self.media_widget.load_comment())
-            self.detection_widget.set_file(file)
+            self.img_person_tag_widget.update_from_comment(self.media_widget.load_comment())
+            self.det_face_widget.clear()
+            self.det_face_widget.set_file(file)
             self.cumul_scale_factor = 1
             self.scroll_area.setVisible(True)
             self.fit_to_window_act.setEnabled(True)
@@ -250,7 +255,7 @@ class FaceEditorWindow(QMainWindow):
         """Save the image displayed in the label."""
         if not self.media_widget.qimage.isNull():
             self.media_widget.save_media(self._model.media_path)
-            self.media_widget.save_comment(self.face_tag_widget.get_tags())
+            self.media_widget.save_comment(self.img_person_tag_widget.get_tags())
         else:
             QMessageBox.information(self, "Empty Image",
                                     "There is no image to save.", QMessageBox.Ok)

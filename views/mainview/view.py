@@ -138,8 +138,8 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
                 self.widget.treeview.selectionModel().selectedIndexes()[0]))
 
     def on_listview_doubleclick(self, event):
-        self.launch_editor_img()
-        self.launch_editor_vid()
+        # self.launch_editor_img()
+        # self.launch_editor_vid()
         self._controller.set_media_path(
             self.widget.fileModel.filePath(
                 self.widget.listview.selectionModel().selectedIndexes()[0]))
