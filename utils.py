@@ -95,6 +95,62 @@ class ImageUserComment(object):
         return ImageUserComment(persons, tags, comments)
 
 
+class VideoUserComment(object):
+    def __init__(self, persons=None, tags=None, comments=''):
+
+        persons = persons if persons else []
+        tags = tags if tags else []
+
+        self._user_comment = user_comment_template.copy()
+        self.persons = persons
+        self.tags = tags
+        self.comments = comments
+
+    @property
+    def persons(self):
+        return self._user_comment['persons']
+
+    @persons.setter
+    def persons(self, value):
+        self._user_comment['persons'] = value
+
+    @property
+    def tags(self):
+        return self._user_comment['persons']
+
+    @tags.setter
+    def tags(self, value):
+        self._user_comment['persons'] = value
+
+    @property
+    def comments(self):
+        return self._user_comment['comments']
+
+    @comments.setter
+    def comments(self, value):
+        self._user_comment['comments'] = value
+
+    def to_dict(self):
+        return self._user_comment
+
+    def update_exif(self, exif_dict):
+        update_user_comment(exif_dict, self.to_dict())
+
+    @staticmethod
+    def from_dict(user_comment_dic):
+        user_comment = ImageUserComment()
+        user_comment._user_comment.update(user_comment_dic)
+        return user_comment
+
+    @staticmethod
+    def load_from_file(file):
+        # TODO: Update this
+        return VideoUserComment()
+
+    @staticmethod
+    def create_item(persons=None, tags=None, comments=''):
+        return VideoUserComment(persons, tags, comments)
+
 def QImageToCvMat(qimage: QImage):
     '''  Converts a QImage into an opencv MAT format  '''
 

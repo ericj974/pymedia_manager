@@ -2,7 +2,9 @@
 
 This is the main source code repository for my picture manager.
 
-## Installation
+## Environment Installation
+
+### Main Packages installation
 
 1. Clone the repo (with submodules)
    ```bash
@@ -10,12 +12,52 @@ This is the main source code repository for my picture manager.
    ```
 2. Setup the conda environment
    ```bash
-   conda install -f environment_3.yml
+   conda env create -f environment_3.yml
    ```
-3. Run the main app
+
+### pyheif lib
+
+   ```bash
+    sudo apt-get install -y libffi-dev libheif-dev libde265-dev
+    conda activate media
+    pip install pyheif
+   ```
+### face_recognition lib
+
+**Clone / compile / install dlib dependency**
+
+***Install build tools***
+
+```bash
+   sudo apt-get install build-essential
+```
+
+***Build and setup dlib***
+
+Steps coming from [this link](https://gist.github.com/ageitgey/629d75c1baac34dfa5ca2a1928a7aeaf?permalink_comment_id=3552228)
+
+   ```bash
+   git clone https://github.com/davisking/dlib.git
+   cd dlib
+   mkdir build; cd build; cmake ..; cmake --build .
+   conda activate media
+   cd ..
+   python3 setup.py install 
+   ```
+
+**Install face_recognition**
+
+   ```bash
+   conda activate media
+   pip install face_recognition
+   ```
+
+## Run the app 
+
    ```bash
    conda activate media
    python main_app.py
+   ```
 
 ## Usage
 

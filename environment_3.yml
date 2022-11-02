@@ -15,6 +15,6 @@ dependencies:
   - pytz
   - pip
   - pip:
-      - face_recognition
       - moviepy # Bug with func if using 1.0.3 conda version
-      - pyheif
+#      - pyheif
+#      - face_recognition

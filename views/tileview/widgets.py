@@ -118,7 +118,8 @@ class VideoWidget(QtWidgets.QLabel, MediaWithMetadata):
         pass
 
     def load_comment(self):
-        return {}
+        user_comment = utils.VideoUserComment.load_from_file(self.file)
+        return user_comment
 
     def save_comment(self, user_comment, file = None):
         pass
