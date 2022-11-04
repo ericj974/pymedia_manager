@@ -9,7 +9,6 @@ from views.renamer.common import nameddic, MyRepo
 from views.renamer.common.base import ClassWithTag
 from views.renamer.parsers.base import MetaParser
 
-BACKUP_FOLDERNAME = '.backup'
 REPO_RENAMERS = MyRepo()
 
 
@@ -58,6 +57,9 @@ class ResultsRenaming(nameddic):
 
 class IRenamer(object):
 
+    def __init__(self, config: dict):
+        self.create_backup = config
+
     @classmethod
     def generate_renamer(cls, config, file_extensions):
         raise NotImplementedError
@@ -94,7 +96,7 @@ class IRenamer(object):
 
     # rename the files in the dic filename -> Result
     def rename_all(self, results_to_rename,
-                   create_backup=True, delete_duplicate=True, options=None):
+                   create_backup, backup_foldername, delete_duplicate=True, options=None):
         # Create the output that will contain the dictionary with the new names
         results = {}
 
@@ -102,7 +104,7 @@ class IRenamer(object):
             folderpath = result.dirpath
             # If create backup need to check if the backup folder exists
             if create_backup:
-                self._init_backup_folder(folderpath=folderpath)
+                self._init_backup_folder(folderpath=folderpath, backup_foldername = backup_foldername)
 
             # check if output name does not change. skip if this is the case
             if result.filename_dst == result.filename_src:
@@ -110,7 +112,8 @@ class IRenamer(object):
                 continue
 
             if create_backup:
-                self._backup_file(folderpath=folderpath, filename=result.filename_src)
+                self._backup_file(folderpath=folderpath, backup_foldername= backup_foldername,
+                                  filename=result.filename_src)
 
             dst = os.path.join(folderpath, result.filename_dst)
             src = os.path.join(folderpath, result.filename_src)
@@ -132,19 +135,19 @@ class IRenamer(object):
 
         return results
 
-    def _init_backup_folder(self, folderpath):
+    def _init_backup_folder(self, folderpath, backup_foldername):
         # Test that the target folder exists
         assert os.path.exists(folderpath)
         # check if it already exists
-        backup_folderpath = os.path.join(folderpath, BACKUP_FOLDERNAME)
+        backup_folderpath = os.path.join(folderpath, backup_foldername)
         if os.path.exists(backup_folderpath):
             assert os.path.isdir(backup_folderpath)
         else:
             os.mkdir(backup_folderpath)
 
-    def _backup_file(self, folderpath, filename):
+    def _backup_file(self, folderpath, backup_foldername, filename):
         # Check that backup folder path exists
-        backup_folderpath = os.path.join(folderpath, BACKUP_FOLDERNAME)
+        backup_folderpath = os.path.join(folderpath, backup_foldername)
         assert os.path.exists(backup_folderpath) and os.path.isdir(backup_folderpath)
         # Copy the file to the backup folder
         src = os.path.join(folderpath, filename)

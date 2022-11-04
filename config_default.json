@@ -1,0 +1,16 @@
+{
+  "MainTileWindow": {
+    "MAX_COL": 3,
+    "TILES_THUMBNAIL_SIZE": 800
+    },
+
+  "MainRenamerWindow": {
+    "CREATE_BACKUP": true,
+    "BACKUP_FOLDERNAME": ".backup",
+    "DELETE_DUPLICATE": true
+  },
+
+  "FaceEditorWindow": {
+    "DB_FOLDER": "path_to_db_folder"
+  }
+}

@@ -68,7 +68,7 @@ class RenamerVideo(ClassWithTag, RenamerWithParser):
 
         return results
 
-    def rename_all(self, results_to_rename, create_backup=True, delete_duplicate=True, options=None):
+    def rename_all(self, results_to_rename, create_backup, backup_foldername, delete_duplicate=True, options=None):
 
         for result in results_to_rename.values():
             dst = os.path.join(result['dirpath'], result.filename_dst)

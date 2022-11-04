@@ -87,9 +87,10 @@ class RenamerPhoto(ClassWithTag, RenamerWithParser):
         return results
 
     def rename_all(self, results_to_rename,
-                   create_backup=True, delete_duplicate=True, options=None):
+                   create_backup, backup_foldername, delete_duplicate=True, options=None):
         results = super(RenamerPhoto, self).rename_all(results_to_rename=results_to_rename,
                                                        create_backup=create_backup,
+                                                       backup_foldername=backup_foldername,
                                                        delete_duplicate=delete_duplicate,
                                                        options=options)
 

@@ -1,3 +1,4 @@
+import logging
 import os
 
 import face_recognition
@@ -22,12 +23,12 @@ icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
 class FaceEditorWindow(QMainWindow):
 
-    def __init__(self, model: MainModel, controller: MainController, db_folder):
+    def __init__(self, model: MainModel, controller: MainController, config: dict):
         super().__init__()
 
         self._model = model
         self._controller = controller
-        self._db_folder = db_folder
+        self._db_folder = config["DB_FOLDER"]
         self.cumul_scale_factor = 1
         self.file = ''
 
@@ -252,10 +253,15 @@ class FaceEditorWindow(QMainWindow):
         return True
 
     def save_metadata(self):
+        logging.warning("Saving not supported yet")
+        QMessageBox.information(self, "Saving not supported yet",QMessageBox.Ok)
+        return
         """Save the image displayed in the label."""
         if not self.media_widget.qimage.isNull():
-            self.media_widget.save_media(self._model.media_path)
-            self.media_widget.save_comment(self.img_person_tag_widget.get_tags())
+            pass
+            #self.media_widget.save_media(self._model.media_path)
+            # TODO: Implement this
+            #self.media_widget.save_comment(self.img_person_tag_widget.get_tags())
         else:
             QMessageBox.information(self, "Empty Image",
                                     "There is no image to save.", QMessageBox.Ok)

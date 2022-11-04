@@ -20,11 +20,12 @@ file_extensions_per_tag = {
 
 
 class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
-    def __init__(self, create_backup, delete_duplicate, model: MainModel, controller: MainController):
+    def __init__(self, model: MainModel, controller: MainController, config: dict = None):
         super(self.__class__, self).__init__()
 
         self._model = model
         self._controller = controller
+
         self.setupUi(self)
         self.setAttribute(Qt.WA_DeleteOnClose, True)
 
@@ -68,9 +69,11 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
         self.checkBox_exif.clicked.connect(self.checked_exif)
 
         # Create backup of the image before renaming ?
-        self.create_backup = create_backup
+        self.create_backup = config["CREATE_BACKUP"] if config else False
+        self.backup_foldername = config["BACKUP_FOLDERNAME"] if config else '.backup'
+
         # Do we create duplicate if destination name exists ?
-        self.delete_duplicate = delete_duplicate
+        self.delete_duplicate = config["DELETE_DUPLICATE"] if config else True
 
         # Current directory
         self.dirpath = ''
@@ -246,6 +249,7 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
         # Rename
         self.renamer.rename_all(results_to_rename=out,
                                 create_backup=self.create_backup,
+                                backup_foldername=self.backup_foldername,
                                 delete_duplicate=self.delete_duplicate,
                                 options=self.options)
         # Update the GUI

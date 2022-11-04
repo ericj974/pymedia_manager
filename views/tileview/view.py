@@ -15,7 +15,7 @@ from views.tileview.widgets import UserCommentWidget, ImageWidget, VideoWidget
 
 
 class MainTileWindow(QtWidgets.QMainWindow):
-    def __init__(self, parent=None, max_col=3, model: MainModel = None, controller: MainController = None):
+    def __init__(self, config=None, parent=None, model: MainModel = None, controller: MainController = None):
         super(MainTileWindow, self).__init__(parent)
         self.setWindowTitle("Tile View")
         self.setAttribute(Qt.WA_DeleteOnClose, True)
@@ -31,10 +31,10 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self._model.selected_file_content_changed.connect(self.on_watcher_file_changed)
 
         # Max col settings for the gridlayout
-        self.max_col = max_col
+        self.max_col = config["MAX_COL"] if config else 3
         # Available position in the grid layout
-        self.col_idx = 0
-        self.row_idx = 0
+        self._col_idx = 0
+        self._row_idx = 0
         # List of file to process (widget creation and placement)
         self._files_to_process = None
         # Path -> widget dict
@@ -96,8 +96,8 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
     def _reset_state(self):
         self._timer.stop()
-        self.col_idx = 0
-        self.row_idx = 0
+        self._col_idx = 0
+        self._row_idx = 0
         for widget in self.media_widgets.values():
             self._layout.removeWidget(widget)
             widget.close()
@@ -124,8 +124,8 @@ class MainTileWindow(QtWidgets.QMainWindow):
         for key in key_to_del:
             del self.media_widgets[key]
 
-        self.col_idx = 0
-        self.row_idx = 0
+        self._col_idx = 0
+        self._row_idx = 0
         self._files_to_process = copy.deepcopy(self._model.files)
         self._timer.start()
 
@@ -148,7 +148,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
             self.media_widgets[file].open_media(file)
             self.media_widgets[file].scaledToWidth(self.scrollArea.size().width() / self.max_col)
             # Scroll down to the selected image
-            posy = self.scrollArea.findChild(QtWidgets.QLabel, file).pos().y()
+            posy = self.scrollArea.findChild(QtWidgets.QWidget, file).pos().y()
             self.scrollArea.verticalScrollBar().setValue(posy)
             # Display the comment
             self.comment_widget.update_from_comment(self.media_widgets[file].load_comment(), file)
@@ -159,7 +159,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
     def on_timeout_process_next_file(self):
         try:
             file = self._files_to_process.pop(0)
-            self.add_media_widget(file)
+            self._add_media_widget(file)
         except IndexError:
             self._timer.stop()
             # Scroll down to the selected image
@@ -182,8 +182,8 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
     def reset(self, delete_widget=False):
         self._timer.stop()
-        self.col_idx = 0
-        self.row_idx = 0
+        self._col_idx = 0
+        self._row_idx = 0
         for widget in self.media_widgets.values():
             self._layout.removeWidget(widget)
             if delete_widget:
@@ -191,7 +191,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
         if delete_widget:
             self.media_widgets = {}
 
-    def add_media_widget(self, file):
+    def _add_media_widget(self, file):
         if file in self.media_widgets:
             widget = self.media_widgets[file]
         else:
@@ -206,11 +206,11 @@ class MainTileWindow(QtWidgets.QMainWindow):
             widget.setAttribute(Qt.WA_DeleteOnClose, True)
             widget.scaledToWidth(self.scrollArea.size().width() / self.max_col)
             self.media_widgets[file] = widget
-            self._layout.addWidget(widget, self.row_idx, self.col_idx)
-            self.col_idx = (self.col_idx + 1)
-            if self.col_idx == self.max_col:
-                self.col_idx = 0
-                self.row_idx += 1
+            self._layout.addWidget(widget, self._row_idx, self._col_idx)
+            self._col_idx = (self._col_idx + 1)
+            if self._col_idx == self.max_col:
+                self._col_idx = 0
+                self._row_idx += 1
         else:
             widget.close()
 

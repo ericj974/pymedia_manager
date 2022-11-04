@@ -51,8 +51,9 @@ def main():
 
     # App setup
     app = QApplication(sys.argv)
-    window = MainRenamerWindow(model=model, controller=controller,
-                               create_backup=args.create_backup, delete_duplicate=args.delete_duplicate)
+    window = MainRenamerWindow(model=model, controller=controller)
+    window.create_backup = args.create_backup
+    window.delete_duplicate = args.delete_duplicate
     window.show()  # Show the form
 
     # If provided, set dirpath

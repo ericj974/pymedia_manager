@@ -13,15 +13,16 @@ from model import MainModel
 from views.renamer import nameddic
 from views.renamer.view import MainRenamerWindow
 from views.tileview.view import MainTileWindow
-from settings import DB_FOLDER
 
 class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
-    def __init__(self, model: MainModel, controller: MainController):
+    def __init__(self, model: MainModel, controller: MainController, config: dict):
         super(self.__class__, self).__init__()
 
         self._model = model
         self._controller = controller
+        self.config = config
+
         self.setupUi(self)
 
         # connect widgets to controller
@@ -66,9 +67,9 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         def _on_destroyed():
             self.renamer_dialog = None
 
+        config = self.config[MainRenamerWindow.__name__]
         if not self.renamer_dialog:
-            self.renamer_dialog = MainRenamerWindow(create_backup=False, delete_duplicate=True,
-                                                    model=self._model, controller=self._controller)
+            self.renamer_dialog = MainRenamerWindow(config=config, model=self._model, controller=self._controller)
             self.renamer_dialog.destroyed.connect(_on_destroyed)
         # set the dir
         self.renamer_dialog.set_dirpath(self._model.dirpath)
@@ -101,8 +102,9 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         def _on_destroyed():
             self.tile_window = None
 
+        config = self.config[MainTileWindow.__name__]
         if not self.tile_window:
-            self.tile_window = MainTileWindow(model=self._model, controller=self._controller)
+            self.tile_window = MainTileWindow(model=self._model, controller=self._controller, config=config)
             self.tile_window.destroyed.connect(_on_destroyed)
         self.tile_window.set_dirpath(self._model.dirpath)
         self.tile_window.show()
@@ -121,8 +123,9 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         def _on_destroyed():
             self.face_editor = None
 
+        config = self.config[FaceEditorWindow.__name__]
         if not self.face_editor:
-            self.face_editor = FaceEditorWindow(model=self._model, controller=self._controller, db_folder=DB_FOLDER)
+            self.face_editor = FaceEditorWindow(model=self._model, controller=self._controller, config=config)
             self.face_editor.destroyed.connect(_on_destroyed)
         self.face_editor.show()
 
