@@ -4,15 +4,15 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 
+from common.clipreader import ClipReader
 from common.state import PlayerState
 from constants import FILE_EXTENSION_VIDEO
+from nodes.clip_editor import ClipViewerWidget
 from nodes.dialogs.base import ClipActionParams
 from nodes.dialogs.concat import ClipConcatParams
-from views.clip_editor.action_params import ClipRotateParams, ClipFlipParams, ClipLumContrastParams
-from common.clipreader import ClipReader
-from nodes.clip_editor import ClipViewerWidget
 from nodes.dialogs.crop import ClipCropperParams, ClipCropperDialog
 from nodes.dialogs.zoom import ClipZoomParams, ClipZoomDialog
+from views.clip_editor.action_params import ClipRotateParams, ClipFlipParams, ClipLumContrastParams
 
 
 class ClipEditorWidget(ClipViewerWidget):
@@ -95,7 +95,7 @@ class ClipEditorWidget(ClipViewerWidget):
             self.action_pipeline.append(params)
             self.new_action_created.emit(params)
             return params, True
-    
+
     def concat_media(self):
         self.clip_stop()
         extensions = ['*.' + ext for ext in FILE_EXTENSION_VIDEO]
@@ -110,7 +110,7 @@ class ClipEditorWidget(ClipViewerWidget):
             params, _ = self._update_create_action(ClipConcatParams)
             params.file2 = file
         self.process_clip()
-                
+
     def crop_media(self):
         self.clip_stop()
         params, _ = self._update_create_action(ClipCropperParams)
@@ -161,7 +161,7 @@ class ClipEditorWidget(ClipViewerWidget):
         if self.clip_reader.state() == PlayerState.PLAYING:
             self.clip_stop()
             clip = self.get_processed_clip(len(self.action_pipeline) - 1)
-            self.orig_videoframe =  clip.get_frame(self.clip_reader.clock.time)
+            self.orig_videoframe = clip.get_frame(self.clip_reader.clock.time)
         elif self.orig_videoframe is None or is_new_action:
             clip = self.get_processed_clip(len(self.action_pipeline) - 1)
             self.orig_videoframe = clip.get_frame(self.clip_reader.clock.time)

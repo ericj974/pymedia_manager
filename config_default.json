@@ -11,6 +11,6 @@
   },
 
   "FaceEditorWindow": {
-    "DB_FOLDER": "path_to_db_folder"
+    "DB_FOLDER": "~/.face_recognition_dataset"
   }
 }

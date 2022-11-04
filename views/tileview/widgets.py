@@ -26,7 +26,7 @@ class UserCommentWidget(QtWidgets.QWidget):
         vlay.addWidget(QtWidgets.QLabel("Persons"))
         vlay.addWidget(self.persons_widget, 1)
 
-    def update_from_comment(self, user_comment, file = None):
+    def update_from_comment(self, user_comment, file=None):
         self.text_widget.setText(user_comment.comments)
         text = ""
         for tag in user_comment.tags:
@@ -57,7 +57,7 @@ class ImageWidget(QtWidgets.QWidget, MediaWithMetadata):
         self.file = ''
         self.orig_pixmap = None
 
-        self.img_label  = QtWidgets.QLabel(self)
+        self.img_label = QtWidgets.QLabel(self)
         self.file_label = QtWidgets.QLabel(self)
         # Main Layout
         layout_main = QVBoxLayout(self)
@@ -92,7 +92,7 @@ class ImageWidget(QtWidgets.QWidget, MediaWithMetadata):
         user_comment = utils.ImageUserComment.load_from_file(self.file)
         return user_comment
 
-    def save_comment(self, user_comment, file = None):
+    def save_comment(self, user_comment, file=None):
         exif_dic = utils.get_exif_v2(self.file)
         user_comment.update_exif(exif_dic)
         utils.save_exif(exif_dict=exif_dic, filepath=self.file)
@@ -110,7 +110,7 @@ class VideoWidget(QtWidgets.QWidget, MediaWithMetadata):
         self.file = ''
         self.orig_pixmap = None
 
-        self.img_label  = QtWidgets.QLabel(self)
+        self.img_label = QtWidgets.QLabel(self)
         self.file_label = QtWidgets.QLabel(self)
 
         # Main Layout
@@ -146,5 +146,5 @@ class VideoWidget(QtWidgets.QWidget, MediaWithMetadata):
         user_comment = utils.VideoUserComment.load_from_file(self.file)
         return user_comment
 
-    def save_comment(self, user_comment, file = None):
+    def save_comment(self, user_comment, file=None):
         pass

@@ -1,22 +1,18 @@
 import logging
 import os
 
-import face_recognition
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QSize, pyqtSlot, QRect
-from PyQt5.QtGui import QIcon, QPalette, QWheelEvent, QPainter, QColor, QPen, QPixmap
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction,
-                             QSlider, QToolButton, QToolBar, QDockWidget, QMessageBox, QGridLayout,
-                             QScrollArea, QStatusBar, QFileDialog, QShortcut, QListWidget, QVBoxLayout)
+from PyQt5.QtCore import Qt, QSize, pyqtSlot
+from PyQt5.QtGui import QIcon, QPalette, QWheelEvent, QPainter, QPen, QPixmap
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QAction,
+                             QToolBar, QDockWidget, QMessageBox, QScrollArea, QStatusBar, QFileDialog, QShortcut)
 
-from controller import MainController
-from utils import QImageToCvMat, image_resize
-from views.face_editor.widgets import FaceTagWidget, FaceDetectionWidget
-from views.img_editor.widgets import ImageLabel, State
-from model import MainModel
-from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
 import resources.icons as icons
-from views.tileview.widgets import UserCommentWidget
+from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
+from controller import MainController
+from model import MainModel
+from views.face_editor.widgets import FaceTagWidget, FaceDetectionWidget
+from views.img_editor.widgets import ImageLabel
 
 icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
@@ -189,29 +185,29 @@ class FaceEditorWindow(QMainWindow):
         self.det_face_widget._detect_faces(self.media_widget.original_image.copy())
         self.display_detection()
 
-    def display_detection(self, selected_ind = -1):
+    def display_detection(self, selected_ind=-1):
         painter = QPainter(self.media_widget.qimage)
-
 
         pen_red = QPen(QtCore.Qt.red)
         pen_red.setWidth(10)
         pen_blue = QPen(QtCore.Qt.blue)
         pen_blue.setWidth(10)
         painter.setPen(pen_blue)
-        for i, ((top, right, bottom, left), name) in enumerate(zip(self.det_face_widget.face_locations, self.det_face_widget.face_names)):
+        for i, ((top, right, bottom, left), name) in enumerate(
+                zip(self.det_face_widget.face_locations, self.det_face_widget.face_names)):
             if i == selected_ind:
                 painter.setPen(pen_red)
                 painter.drawRect(left, top, right - left, bottom - top)
                 painter.setPen(pen_blue)
             else:
-                painter.drawRect(left, top, right-left, bottom-top)
+                painter.drawRect(left, top, right - left, bottom - top)
         self.media_widget.setPixmap(QPixmap().fromImage(self.media_widget.qimage))
         painter.end()
 
     def open_media(self, file=""):
         """Load a new media"""
         if file == "":
-            extensions = ['*.'+ext for ext in FILE_EXTENSION_PHOTO]
+            extensions = ['*.' + ext for ext in FILE_EXTENSION_PHOTO]
             ext = "("
             for e in extensions:
                 ext += e + " "
@@ -254,14 +250,14 @@ class FaceEditorWindow(QMainWindow):
 
     def save_metadata(self):
         logging.warning("Saving not supported yet")
-        QMessageBox.information(self, "Saving not supported yet",QMessageBox.Ok)
+        QMessageBox.information(self, "Saving not supported yet", QMessageBox.Ok)
         return
         """Save the image displayed in the label."""
         if not self.media_widget.qimage.isNull():
             pass
-            #self.media_widget.save_media(self._model.media_path)
+            # self.media_widget.save_media(self._model.media_path)
             # TODO: Implement this
-            #self.media_widget.save_comment(self.img_person_tag_widget.get_tags())
+            # self.media_widget.save_comment(self.img_person_tag_widget.get_tags())
         else:
             QMessageBox.information(self, "Empty Image",
                                     "There is no image to save.", QMessageBox.Ok)

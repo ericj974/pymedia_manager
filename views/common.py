@@ -38,4 +38,3 @@ class MediaWithMetadata(object):
         }
         :return: None
         """
-

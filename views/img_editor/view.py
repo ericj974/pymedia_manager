@@ -7,11 +7,11 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction
                              QSlider, QToolButton, QToolBar, QDockWidget, QMessageBox, QGridLayout,
                              QScrollArea, QStatusBar, QFileDialog, QShortcut)
 
-from controller import MainController
-from views.img_editor.widgets import ImageLabel, State
-from model import MainModel
-from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
 import resources.icons as icons
+from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
+from controller import MainController
+from model import MainModel
+from views.img_editor.widgets import ImageLabel, State
 from views.tileview.widgets import UserCommentWidget
 
 icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
@@ -52,7 +52,6 @@ class PhotoEditorWindow(QMainWindow):
             else:
                 self.media_widget.reset()
                 self.setEnabled(False)
-
 
     @pyqtSlot(str)
     def on_media_path_changed(self, path):
@@ -222,7 +221,6 @@ class PhotoEditorWindow(QMainWindow):
         tag_dock_widget.setWidget(self.comment_toolbar)
         self.addDockWidget(Qt.RightDockWidgetArea, tag_dock_widget)
 
-
     def create_editing_bar(self):
         """Create dock widget for editing tools."""
         # TODO: Add a tab widget for the different editing tools
@@ -309,7 +307,7 @@ class PhotoEditorWindow(QMainWindow):
     def open_media(self, file=""):
         """Load a new media"""
         if file == "":
-            extensions = ['*.'+ext for ext in FILE_EXTENSION_PHOTO]
+            extensions = ['*.' + ext for ext in FILE_EXTENSION_PHOTO]
             ext = "("
             for e in extensions:
                 ext += e + " "

@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from shutil import copy2
 
 import cv2
 
@@ -70,7 +69,7 @@ class FaceDetectionDB(metaclass=Singleton):
         assert file is not None and file != ''
 
         filename, file_extension = os.path.splitext(os.path.basename(file))
-        filename_out = os.path.join(name,os.path.basename(file))
+        filename_out = os.path.join(name, os.path.basename(file))
         file_out = os.path.join(self.db_img_folder, filename_out)
         if filename_out in self.known_face_filenames:
             logging.warning('FaceDB: Duplicate entry with same filename. Skip saving...')
@@ -116,7 +115,7 @@ class FaceDetectionDB(metaclass=Singleton):
         return True
 
     @staticmethod
-    def create_item(name, encoding, filename, enc_hash = None):
+    def create_item(name, encoding, filename, enc_hash=None):
         enc_hash = enc_hash if enc_hash else str(hash(encoding.tobytes()))
         return {
             'filename': filename,
@@ -124,7 +123,3 @@ class FaceDetectionDB(metaclass=Singleton):
             'name': name,
             'hash': enc_hash
         }
-
-
-
-

@@ -8,13 +8,13 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction
                              QSlider, QToolBar, QDockWidget, QMessageBox, QGridLayout,
                              QScrollArea, QStatusBar, QFileDialog, QShortcut, QStyle)
 
+import resources.icons as icons
 from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_VIDEO
 from controller import MainController
 from model import MainModel
 from nodes.dialogs.base import ClipActionParams
 from views.clip_editor.action_params import FlipOrientation, RotationOrientation
 from views.clip_editor.widgets import ClipEditorWidget
-import resources.icons as icons
 
 icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
@@ -302,7 +302,7 @@ class ClipEditorWindow(QMainWindow):
     def open_media(self, file=""):
         """Load a new image into the """
         if file == "":
-            extensions = ['*.'+ext for ext in FILE_EXTENSION_VIDEO]
+            extensions = ['*.' + ext for ext in FILE_EXTENSION_VIDEO]
             ext = "("
             for e in extensions:
                 ext += e + " "

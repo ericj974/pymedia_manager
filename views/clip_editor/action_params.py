@@ -67,12 +67,12 @@ class ClipFlipParams(ClipActionParams):
 
 class ClipLumContrastParams(ClipActionParams):
 
-    def __init__(self, lum = 0, contrast=0, name=None):
+    def __init__(self, lum=0, contrast=0, name=None):
         super().__init__(name=name if name else self.action_type())
         # Brightness
         self.lum = lum
         self.contrast = contrast
-        self.contrast_thr=128.
+        self.contrast_thr = 128.
 
     def set_luminosity(self, value):
         self.lum = value
@@ -84,15 +84,14 @@ class ClipLumContrastParams(ClipActionParams):
         # See https://www.dfstudios.co.uk/articles/programming/image-programming-algorithms/image-processing-algorithms-part-5-contrast-adjustment/
         f = 259. * (self.contrast + 255.) / (255. * (259 - self.contrast))
         frame = im.astype('float')
-        new_frame = f*(frame - self.contrast_thr) + self.contrast_thr + self.lum
+        new_frame = f * (frame - self.contrast_thr) + self.contrast_thr + self.lum
         new_frame[new_frame < 0] = 0
         new_frame[new_frame > 255] = 255
         return new_frame.astype('uint8')
 
     def process_clip(self, clip):
         return clip.fl_image(self.process_im)
+
     @staticmethod
     def action_type():
         return "LuminosityContrast"
-
-

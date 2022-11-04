@@ -104,7 +104,7 @@ class IRenamer(object):
             folderpath = result.dirpath
             # If create backup need to check if the backup folder exists
             if create_backup:
-                self._init_backup_folder(folderpath=folderpath, backup_foldername = backup_foldername)
+                self._init_backup_folder(folderpath=folderpath, backup_foldername=backup_foldername)
 
             # check if output name does not change. skip if this is the case
             if result.filename_dst == result.filename_src:
@@ -112,7 +112,7 @@ class IRenamer(object):
                 continue
 
             if create_backup:
-                self._backup_file(folderpath=folderpath, backup_foldername= backup_foldername,
+                self._backup_file(folderpath=folderpath, backup_foldername=backup_foldername,
                                   filename=result.filename_src)
 
             dst = os.path.join(folderpath, result.filename_dst)

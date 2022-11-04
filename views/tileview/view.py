@@ -8,9 +8,9 @@ from PyQt5.QtGui import QGuiApplication
 from PyQt5.QtWidgets import QStatusBar, QHBoxLayout, QAction
 
 import utils
+from constants import FILE_EXTENSION_VIDEO, FILE_EXTENSION_PHOTO
 from controller import MainController
 from model import MainModel
-from constants import FILE_EXTENSION_VIDEO, FILE_EXTENSION_PHOTO
 from views.tileview.widgets import UserCommentWidget, ImageWidget, VideoWidget
 
 

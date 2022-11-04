@@ -51,6 +51,12 @@ Steps coming from [this link](https://gist.github.com/ageitgey/629d75c1baac34dfa
    conda activate media
    pip install face_recognition
    ```
+## Setup the configuration File
+
+The app will look first for `config.json` to run, and use by default `config_default.json` if not found.
+You may wish to 
+- create a config.json as a copy of `config_default.json`, and
+- Specify an existing or a new location for the face_detection dataset (see DB_FOLDER in `config_default.json`)
 
 ## Run the app 
 

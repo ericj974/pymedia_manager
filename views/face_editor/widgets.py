@@ -1,10 +1,9 @@
 import face_recognition
 import numpy as np
-
-from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import Qt, QEvent, QItemSelectionModel
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtWidgets import QVBoxLayout, QListWidget, QLineEdit, \
-    QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton, QAbstractItemView
+    QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton
 
 from utils import QImageToCvMat, image_resize
 from views.face_editor.utils import FaceDetectionDB
@@ -91,7 +90,6 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         # Display update
         self.update_db_display()
         self.update_det_result_display()
-
 
     def set_file(self, file):
         self.file = file
