@@ -29,6 +29,7 @@ class MainTileWindow(QtWidgets.QMainWindow):
         self._model.selected_media_changed.connect(self.on_selected_media_changed)
         self._model.selected_dir_content_changed.connect(self.on_watcher_dir_changed)
         self._model.selected_file_content_changed.connect(self.on_watcher_file_changed)
+        self._model.selected_media_comment_updated.connect(self.on_model_comment_updated)
 
         # Max col settings for the gridlayout
         self.max_col = config["MAX_COL"] if config else 3
@@ -85,7 +86,8 @@ class MainTileWindow(QtWidgets.QMainWindow):
 
     def _save_user_comment(self):
         comment = self.comment_widget.get_comment()
-        self.media_widgets[self.file].save_comment(comment)
+        self._controller.update_media_comment(comment=comment)
+        self._controller.save_media_comment()
 
     def _delete_thumbnails(self):
         for file in self._model.files:
@@ -150,11 +152,14 @@ class MainTileWindow(QtWidgets.QMainWindow):
             # Scroll down to the selected image
             posy = self.scrollArea.findChild(QtWidgets.QWidget, file).pos().y()
             self.scrollArea.verticalScrollBar().setValue(posy)
-            # Display the comment
-            self.comment_widget.update_from_comment(self.media_widgets[file].load_comment(), file)
         else:
             # Seems like a file has been added (or a rename)
             self.update_dirpath_content()
+
+    @pyqtSlot(utils.UserComment)
+    def on_model_comment_updated(self):
+        # Display the comment
+        self.comment_widget.update_from_comment(self._model.media_comment, self.file)
 
     def on_timeout_process_next_file(self):
         try:

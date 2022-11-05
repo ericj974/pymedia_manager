@@ -30,7 +30,7 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
         self.setAttribute(Qt.WA_DeleteOnClose, True)
 
         # connect widgets to controller
-        self.__class__.dropEvent = self.on_drop_media #self._controller.update_dirpath
+        self.__class__.dropEvent = self.on_drop_media  # self._controller.update_dirpath
 
         # listen for model event signals
         self._model.selected_dir_changed.connect(self.on_dirpath_changed)

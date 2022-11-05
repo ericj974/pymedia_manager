@@ -75,7 +75,6 @@ class PhotoEditorWindow(QMainWindow):
                     self._controller.set_media_path(path)
             break
 
-
     def create_actions_shortcuts(self):
         # Actions for Photo Editor menu
         self.about_act = QAction('About', self)
@@ -163,8 +162,10 @@ class PhotoEditorWindow(QMainWindow):
         # And the shortcuts
         QShortcut(QtCore.Qt.Key.Key_Right, self, lambda: self._controller.select_next_media(
             extension=FILE_EXTENSION_PHOTO))
-        QShortcut(QtCore.Qt.Key.Key_Left, self, lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_PHOTO))
-        QShortcut(QtCore.Qt.Key.Key_Delete, self, lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_PHOTO))
+        QShortcut(QtCore.Qt.Key.Key_Left, self,
+                  lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_PHOTO))
+        QShortcut(QtCore.Qt.Key.Key_Delete, self,
+                  lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_PHOTO))
 
     def create_menus(self):
         """Set up the menubar."""
@@ -301,7 +302,6 @@ class PhotoEditorWindow(QMainWindow):
     def create_main_label(self):
         """Create an instance of the imageLabel class and set it 
            as the main window's central widget."""
-
 
         self.scroll_area = QScrollArea(self)
         self.scroll_area.setBackgroundRole(QPalette.Dark)

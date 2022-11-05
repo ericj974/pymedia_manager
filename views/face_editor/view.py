@@ -1,4 +1,3 @@
-import logging
 import os
 
 from PyQt5 import QtCore
@@ -8,10 +7,11 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QAction,
                              QToolBar, QDockWidget, QMessageBox, QScrollArea, QStatusBar, QFileDialog, QShortcut)
 
 import resources.icons as icons
+import utils
 from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
 from controller import MainController
 from model import MainModel
-from views.face_editor.widgets import FaceTagWidget, FaceDetectionWidget
+from views.face_editor.widgets import FaceTagWidget, FaceDetectionWidget, unknown_tag
 from views.img_editor.widgets import ImageLabel
 
 icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
@@ -35,9 +35,10 @@ class FaceEditorWindow(QMainWindow):
         self.create_top_toolbar()
         self.create_face_tag_toolbar()
         self.setAttribute(Qt.WA_DeleteOnClose, True)
-        # listen for model event
-        # Model Event - selected image has changed
-        self._model.selected_media_changed.connect(self.on_media_path_changed)
+
+        # listen for model event signals
+        self._model.selected_media_changed.connect(self.on_selected_media_changed)
+        self._model.selected_media_comment_updated.connect(self.on_model_comment_updated)
 
         self.setMinimumSize(300, 200)
         self.setWindowTitle("Face Editor")
@@ -55,10 +56,15 @@ class FaceEditorWindow(QMainWindow):
                 self.setEnabled(False)
 
     @pyqtSlot(str)
-    def on_media_path_changed(self, path):
+    def on_selected_media_changed(self, path):
         ok = self.open_media(file=path)
         if ok or self.isVisible():
             self.show()
+
+    @pyqtSlot(utils.UserComment)
+    def on_model_comment_updated(self):
+        # Display the comment
+        self.img_tag_widget.update_from_comment(self._model.media_comment)
 
     def create_actions_shortcuts(self):
         # Actions for Photo Editor menu
@@ -71,7 +77,7 @@ class FaceEditorWindow(QMainWindow):
 
         self.save_act = QAction(QIcon(os.path.join(icon_path, "save.png")), "Save...", self)
         self.save_act.setShortcut('Ctrl+S')
-        self.save_act.triggered.connect(self.save_metadata)
+        self.save_act.triggered.connect(self._save_user_comment)
         self.save_act.setEnabled(False)
 
         self.zoom_in_act = QAction(QIcon(os.path.join(icon_path, "zoom_in.png")), 'Zoom In', self)
@@ -97,13 +103,16 @@ class FaceEditorWindow(QMainWindow):
         self.fit_to_window_act.setChecked(True)
 
         self.detect_faces_act = QAction((QIcon(os.path.join(icon_path, "detect_faces.png"))), "Detect Faces", self)
+        self.detect_faces_act.setShortcut('Ctrl+D')
         self.detect_faces_act.triggered.connect(self._detect_faces)
 
         # And the shortcuts
         QShortcut(QtCore.Qt.Key.Key_Right, self, lambda: self._controller.select_next_media(
             extension=FILE_EXTENSION_PHOTO))
-        QShortcut(QtCore.Qt.Key.Key_Left, self, lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_PHOTO))
-        QShortcut(QtCore.Qt.Key.Key_Delete, self, lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_PHOTO))
+        QShortcut(QtCore.Qt.Key.Key_Left, self,
+                  lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_PHOTO))
+        QShortcut(QtCore.Qt.Key.Key_Delete, self,
+                  lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_PHOTO))
 
     def create_menus(self):
         """Set up the menubar."""
@@ -148,8 +157,9 @@ class FaceEditorWindow(QMainWindow):
 
     def create_face_tag_toolbar(self):
         tag_dock_widget = QDockWidget("Face Tags")
-        self.img_person_tag_widget = FaceTagWidget()
-        tag_dock_widget.setWidget(self.img_person_tag_widget)
+        self.img_tag_widget = FaceTagWidget()
+        self.img_tag_widget.persons_widget.__class__.dropEvent = self.on_tag_drop
+        tag_dock_widget.setWidget(self.img_tag_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, tag_dock_widget)
 
     def create_editing_bar(self):
@@ -228,7 +238,7 @@ class FaceEditorWindow(QMainWindow):
         if file:
             self.file = file
             self.media_widget.open_media(file)
-            self.img_person_tag_widget.update_from_comment(self.media_widget.load_comment())
+            self.img_tag_widget.update_from_comment(self.media_widget.load_comment())
             self.det_face_widget.clear()
             self.det_face_widget.set_file(file)
             self.cumul_scale_factor = 1
@@ -249,19 +259,12 @@ class FaceEditorWindow(QMainWindow):
                                     "Unable to open image.", QMessageBox.Ok)
         return True
 
-    def save_metadata(self):
-        logging.warning("Saving not supported yet")
-        QMessageBox.information(self, "Saving not supported yet", QMessageBox.Ok)
-        return
-        """Save the image displayed in the label."""
-        if not self.media_widget.qimage.isNull():
-            pass
-            # self.media_widget.save_media(self._model.media_path)
-            # TODO: Implement this
-            # self.media_widget.save_comment(self.img_person_tag_widget.get_tags())
-        else:
-            QMessageBox.information(self, "Empty Image",
-                                    "There is no image to save.", QMessageBox.Ok)
+    def _save_user_comment(self):
+        persons = self.img_tag_widget.get_person_tags()
+        comment = self._model.media_comment
+        new_comment = comment.create_item(persons=persons, tags=comment.tags, comments=comment.comments)
+        self._controller.update_media_comment(comment=new_comment)
+        self._controller.save_media_comment()
 
     def scale_image(self, scale_factor):
         """Zoom in and zoom out."""
@@ -333,3 +336,13 @@ class FaceEditorWindow(QMainWindow):
     def on_table_double_clicked(self, index):
         row = index.row()
         self.display_detection(row)
+
+    def on_tag_drop(self, e):
+        if (e.source() in [self.det_face_widget.result_widget, self.det_face_widget.list_db_tags_widget]):
+            widget = e.source()
+            tags = self.img_tag_widget.get_person_tags()
+            for item, index in zip(widget.selectedItems(), widget.selectionModel().selectedIndexes()):
+                if (item.text() == unknown_tag) or (item.text() in tags):
+                    continue
+                tags.append(item.text())
+            self.img_tag_widget.update_from_tags(tags)

@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLabel, QAction
                              QScrollArea, QStatusBar, QFileDialog, QShortcut, QStyle)
 
 import resources.icons as icons
-from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_VIDEO
+from constants import FILE_EXTENSION_VIDEO
 from controller import MainController
 from model import MainModel
 from nodes.dialogs.base import ClipActionParams
@@ -84,7 +84,6 @@ class ClipEditorWindow(QMainWindow):
                 if ext in FILE_EXTENSION_VIDEO:
                     self._controller.set_media_path(path)
             break
-
 
     def create_actions_shortcuts(self):
         # Actions for Editor menu
@@ -161,8 +160,10 @@ class ClipEditorWindow(QMainWindow):
         # And the shortcuts
         QShortcut(QtCore.Qt.Key.Key_Right, self, lambda: self._controller.select_next_media(
             extension=FILE_EXTENSION_VIDEO))
-        QShortcut(QtCore.Qt.Key.Key_Left, self, lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_VIDEO))
-        QShortcut(QtCore.Qt.Key.Key_Delete, self, lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_VIDEO))
+        QShortcut(QtCore.Qt.Key.Key_Left, self,
+                  lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_VIDEO))
+        QShortcut(QtCore.Qt.Key.Key_Delete, self,
+                  lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_VIDEO))
 
     def create_menus(self):
         """Set up the menubar."""

@@ -1,11 +1,15 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from utils import UserComment
+
 
 class MainModel(QObject):
     # Change of directory path
     selected_dir_changed = pyqtSignal(str)
     # Change of selected picture file
     selected_media_changed = pyqtSignal(str)
+    # Update of selected media comment / metadata
+    selected_media_comment_updated = pyqtSignal(UserComment)
     # Change of directory path
     selected_dir_content_changed = pyqtSignal(str)
     # Change of the content of the selected image (maybe it has been modified
@@ -15,6 +19,7 @@ class MainModel(QObject):
         super(MainModel, self).__init__()
         self._dir_path = ""
         self._media_path = ""
+        self._media_comment = None
         self._files = []
 
     @property
@@ -36,6 +41,15 @@ class MainModel(QObject):
     def media_path(self, file):
         self._media_path = file
         self.selected_media_changed.emit(file)
+
+    @property
+    def media_comment(self):
+        return self._media_comment
+
+    @media_comment.setter
+    def media_comment(self, value):
+        self._media_comment = value
+        self.selected_media_comment_updated.emit(value)
 
     @property
     def files(self):

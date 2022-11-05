@@ -2,8 +2,9 @@ import face_recognition
 import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtGui import QDragMoveEvent
 from PyQt5.QtWidgets import QVBoxLayout, QListWidget, QLineEdit, \
-    QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton
+    QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton, QAbstractItemView
 
 from utils import QImageToCvMat, image_resize
 from views.face_editor.utils import FaceDetectionDB
@@ -11,28 +12,90 @@ from views.face_editor.utils import FaceDetectionDB
 unknown_tag = "unknown"
 
 
+class MyTextEdit(QtWidgets.QTextEdit):
+    def __init__(self, parent=None):
+        super(MyTextEdit, self).__init__(parent)
+        self.setAcceptDrops(True)
+        self.__class__.dragEnterEvent = lambda _, event: event.acceptProposedAction()
+        self.src_widget = None
+
+    def dragMoveEvent(self, e: QDragMoveEvent):
+        if (e.source() != self):
+            e.accept()
+        else:
+            e.ignore()
+
+
+class MyListWidget(QListWidget):
+    def __init__(self, parent=None):
+        super(MyListWidget, self).__init__(parent)
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection);
+        self.setAcceptDrops(True)
+        self.setDragEnabled(True)
+        self.setDragDropMode(QAbstractItemView.DragDrop)
+        self.setDropIndicatorShown(True)
+        self.src_widget = None
+
+    def dragMoveEvent(self, e: QDragMoveEvent):
+        if (e.source() != self):
+            e.accept()
+        else:
+            e.ignore()
+
+
 class FaceTagWidget(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         QtWidgets.QWidget.__init__(self, *args, **kwargs)
 
         self.title = QtWidgets.QLabel()
-
-        self.persons_widget = QtWidgets.QTextEdit()
+        self.persons_widget = MyListWidget()
+        self.persons_widget.installEventFilter(self)
 
         vlay = QVBoxLayout()
         self.setLayout(vlay)
         vlay.addWidget(self.title)
-        vlay.addWidget(QtWidgets.QLabel("Img Tags"))
+        vlay.addWidget(QtWidgets.QLabel("Face Tags"))
         vlay.addWidget(self.persons_widget, 1)
 
-    def update_from_comment(self, user_comment):
-        text = ""
-        for tag in user_comment.persons:
-            text += tag + " "
-        self.persons_widget.setText(text)
+    def update_from_comment(self, media_comment):
+        self.update_from_tags(media_comment.persons)
 
-    def get_tags(self):
-        pass
+    def update_from_tags(self, tags):
+        self.persons_widget.clear()
+        self.persons_widget.addItems(tags)
+
+    def get_person_tags(self):
+        return [self.persons_widget.item(i).text() for i in range(self.persons_widget.count())]
+
+    def act_rename(self):
+        if len(self.persons_widget.selectedItems()) == 0:
+            return
+        text, okPressed = QtWidgets.QInputDialog.getText(self, "New Name", "New Name:")
+        if okPressed and text != '':
+            if len(self.persons_widget.selectedItems()) > 0:
+                self.persons_widget.currentItem().setText(text)
+
+    def act_add_tag(self):
+        text, okPressed = QtWidgets.QInputDialog.getText(self, "New tag", "New tag:")
+        if okPressed and text != '':
+            tags = self.get_person_tags()
+            if text not in tags:
+                self.persons_widget.addItem(text)
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.ContextMenu and source is self.persons_widget:
+            menu = QMenu()
+            if len(self.persons_widget.selectedItems()) > 0:
+                action = QAction('Rename', self)
+                action.triggered.connect(self.act_rename)
+                menu.addAction(action)
+            action = QAction('New Tag', self)
+            action.triggered.connect(self.act_add_tag)
+            menu.addAction(action)
+            if menu.exec_(event.globalPos()):
+                item = source.itemAt(event.pos())
+            return True
+        return super().eventFilter(source, event)
 
 
 class FaceDetectionWidget(QtWidgets.QWidget):
@@ -44,8 +107,11 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         # Search bar.
         self.searchbar = QLineEdit()
         self.searchbar.textChanged.connect(self.update_display_when_searching)
-        self.list_db_tags_widget = QListWidget()
+
+        self.list_db_tags_widget = MyListWidget()
         self.list_db_tags_widget.doubleClicked.connect(self.on_db_table_clicked)
+        self.list_db_tags_widget.__class__.dropEvent = self.on_db_drop
+
         self.scroll_db = QScrollArea()
         self.scroll_db.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll_db.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -53,7 +119,8 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.scroll_db.setWidget(self.list_db_tags_widget)
 
         # Detection part
-        self.result_widget = QListWidget()
+        self.result_widget = MyListWidget()
+        self.list_db_tags_widget.src_widget = self.result_widget
         # self.result_widget.setSelectionModel(QtGui.QItem)
         self.result_widget.installEventFilter(self)
         self.scroll_detection = QScrollArea()
@@ -64,7 +131,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
 
         # Buttons
         self.btn_save_to_db = QPushButton('Save to DB', self)
-        self.btn_save_to_db.clicked.connect(self.save_tag_to_db)
+        self.btn_save_to_db.clicked.connect(self.save_selected_det_to_db)
         # Create layouts to place inside widget
         layout_buttons = QHBoxLayout()
         layout_buttons.setContentsMargins(0, 0, 0, 0)
@@ -151,14 +218,17 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.face_imgs = []
         self.update_det_result_display()
 
-    def save_tag_to_db(self):
-        if len(self.result_widget.selectedItems()) > 0 and self.result_widget.currentItem().text() != unknown_tag:
-            ind = self.result_widget.currentIndex().row()
+    def save_selected_det_to_db(self):
+        for item, index in zip(self.result_widget.selectedItems(),
+                               self.result_widget.selectionModel().selectedIndexes()):
+            if item.text() == unknown_tag:
+                continue
+            ind = index.row()
             self.db.add_to_db(name=self.face_names[ind],
                               encoding=self.face_encodings[ind],
                               img=self.face_imgs[ind],
                               file=self.file)
-            self.update_db_display()
+        self.update_db_display()
 
     def eventFilter(self, source, event):
         def rename():
@@ -185,3 +255,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         if len(self.result_widget.selectedItems()) > 0:
             self.face_names[self.result_widget.currentIndex().row()] = self.list_db_tags_widget.item(index.row()).text()
             self.result_widget.currentItem().setText(self.face_names[self.result_widget.currentIndex().row()])
+
+    def on_db_drop(self, e):
+        if (e.source() == self.result_widget):
+            self.save_selected_det_to_db()

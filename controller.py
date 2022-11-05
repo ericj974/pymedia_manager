@@ -3,7 +3,8 @@ import os
 from PyQt5.QtCore import QFileSystemWatcher
 from send2trash import send2trash
 
-from constants import FILE_EXTENSION_MEDIA, FILE_EXTENSION_PHOTO, FILE_EXTENSION_VIDEO
+import utils
+from constants import FILE_EXTENSION_MEDIA, FILE_EXTENSION_PHOTO, FILE_EXTENSION_VIDEO, FILE_EXTENSION_PHOTO_JPG
 from model import MainModel
 
 
@@ -70,6 +71,16 @@ class MainController:
                 self.update_dirpath(os.path.dirname(path))
             self._model.media_path = path
 
+            # Load the comments
+            ext = os.path.splitext(path)[1][1:]
+            if ext in FILE_EXTENSION_PHOTO_JPG:
+                self._model.media_comment = utils.ImageUserComment.load_from_file(path)
+
+    def update_media_comment(self, comment):
+        self._model.media_comment = comment
+
+    def save_media_comment(self):
+        self._model.media_comment.save_comment(self._model.media_path)
 
     def _next_media(self, incr = 1, extension = FILE_EXTENSION_MEDIA):
         idx0 = idx = self._model.files.index(self._model.media_path)
