@@ -34,9 +34,15 @@ class PhotoEditorWindow(QMainWindow):
         self.create_top_toolbar()
         self.create_comment_tag_toolbar()
         self.setAttribute(Qt.WA_DeleteOnClose, True)
+
         # listen for model event
         # Model Event - selected image has changed
         self._model.selected_media_changed.connect(self.on_media_path_changed)
+
+        # drop event
+        self.setAcceptDrops(True)
+        self.__class__.dragEnterEvent = lambda _, event: event.acceptProposedAction()
+        self.__class__.dropEvent = self.on_drop_media
 
         self.setMinimumSize(300, 200)
         self.setWindowTitle("Photo Editor")
@@ -58,6 +64,17 @@ class PhotoEditorWindow(QMainWindow):
         ok = self.open_media(file=path)
         if ok or self.isVisible():
             self.show()
+
+    @pyqtSlot(str)
+    def on_drop_media(self, event):
+        for url in event.mimeData().urls():
+            path = url.toLocalFile()
+            if os.path.isfile(path):
+                ext = os.path.splitext(path)[1][1:]
+                if ext in FILE_EXTENSION_PHOTO_JPG:
+                    self._controller.set_media_path(path)
+            break
+
 
     def create_actions_shortcuts(self):
         # Actions for Photo Editor menu
@@ -144,9 +161,10 @@ class PhotoEditorWindow(QMainWindow):
         self.detect_faces_act.triggered.connect(self._detect_faces)
 
         # And the shortcuts
-        QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_media)
-        QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_media)
-        QShortcut(QtCore.Qt.Key.Key_Delete, self, self._controller.delete_cur_media)
+        QShortcut(QtCore.Qt.Key.Key_Right, self, lambda: self._controller.select_next_media(
+            extension=FILE_EXTENSION_PHOTO))
+        QShortcut(QtCore.Qt.Key.Key_Left, self, lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_PHOTO))
+        QShortcut(QtCore.Qt.Key.Key_Delete, self, lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_PHOTO))
 
     def create_menus(self):
         """Set up the menubar."""
@@ -283,13 +301,18 @@ class PhotoEditorWindow(QMainWindow):
     def create_main_label(self):
         """Create an instance of the imageLabel class and set it 
            as the main window's central widget."""
-        self.media_widget = ImageLabel(self)
 
-        self.scroll_area = QScrollArea()
+
+        self.scroll_area = QScrollArea(self)
         self.scroll_area.setBackgroundRole(QPalette.Dark)
         self.scroll_area.setAlignment(Qt.AlignCenter)
+
+        self.media_widget = ImageLabel(self)
         self.scroll_area.setWidget(self.media_widget)
+
         self.setCentralWidget(self.scroll_area)
+        # self.media_widget.setAcceptDrops(True)
+        # self.media_widget.__class__.dropEvent = self.on_drop_media
         self.resize(QApplication.primaryScreen().availableSize() * 3 / 5)
 
     def update_actions(self):

@@ -5,7 +5,7 @@
     },
 
   "MainRenamerWindow": {
-    "CREATE_BACKUP": true,
+    "CREATE_BACKUP": false,
     "BACKUP_FOLDERNAME": ".backup",
     "DELETE_DUPLICATE": true
   },

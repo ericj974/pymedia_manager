@@ -100,9 +100,10 @@ class FaceEditorWindow(QMainWindow):
         self.detect_faces_act.triggered.connect(self._detect_faces)
 
         # And the shortcuts
-        QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_media)
-        QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_media)
-        QShortcut(QtCore.Qt.Key.Key_Delete, self, self._controller.delete_cur_media)
+        QShortcut(QtCore.Qt.Key.Key_Right, self, lambda: self._controller.select_next_media(
+            extension=FILE_EXTENSION_PHOTO))
+        QShortcut(QtCore.Qt.Key.Key_Left, self, lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_PHOTO))
+        QShortcut(QtCore.Qt.Key.Key_Delete, self, lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_PHOTO))
 
     def create_menus(self):
         """Set up the menubar."""

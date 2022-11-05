@@ -30,7 +30,7 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
         self.setAttribute(Qt.WA_DeleteOnClose, True)
 
         # connect widgets to controller
-        self.__class__.dropEvent = self._controller.update_dirpath
+        self.__class__.dropEvent = self.on_drop_media #self._controller.update_dirpath
 
         # listen for model event signals
         self._model.selected_dir_changed.connect(self.on_dirpath_changed)
@@ -233,6 +233,9 @@ class MainRenamerWindow(QMainWindow, renamer_ui.Ui_MainWindow):
         filename = self.table_result.item(row, 0).data(0)
         file = os.path.join(self._model.dirpath, filename)
         self._controller.set_media_path(file)
+
+    def on_drop_media(self, item):
+        self._controller.update_dirpath(item)
 
     # Change the name
     def rename_list(self):

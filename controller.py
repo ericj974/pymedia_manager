@@ -3,7 +3,7 @@ import os
 from PyQt5.QtCore import QFileSystemWatcher
 from send2trash import send2trash
 
-from constants import FILE_EXTENSION_MEDIA
+from constants import FILE_EXTENSION_MEDIA, FILE_EXTENSION_PHOTO, FILE_EXTENSION_VIDEO
 from model import MainModel
 
 
@@ -70,21 +70,33 @@ class MainController:
                 self.update_dirpath(os.path.dirname(path))
             self._model.media_path = path
 
-    def select_next_media(self):
-        idx = self._model.files.index(self._model.media_path)
-        idx = (idx + 1) % len(self._model.files)
+
+    def _next_media(self, incr = 1, extension = FILE_EXTENSION_MEDIA):
+        idx0 = idx = self._model.files.index(self._model.media_path)
+
+        def increment():
+            _idx = (idx + incr) % len(self._model.files)
+            path = self._model.files[_idx]
+            filename, file_extension = os.path.splitext(path)
+            file_extension = file_extension[1:]
+            return _idx, file_extension
+
+        while True:
+            idx, ext = increment()
+            if (ext in extension) or (idx == idx0):
+                break
         path = self._model.files[idx]
         self.set_media_path(path)
 
-    def select_prev_media(self):
-        idx = self._model.files.index(self._model.media_path)
-        idx = (idx - 1) % len(self._model.files)
-        path = self._model.files[idx]
-        self.set_media_path(path)
+    def select_next_media(self, extension= FILE_EXTENSION_MEDIA):
+        self._next_media(incr=1, extension=extension)
 
-    def delete_cur_media(self):
+    def select_prev_media(self, extension= FILE_EXTENSION_MEDIA):
+        self._next_media(incr=-1,extension=extension)
+
+    def delete_cur_media(self, extension= FILE_EXTENSION_MEDIA):
         file_to_delete = self._model.media_path
-        self.select_next_media()
+        self.select_next_media(extension=filter)
         send2trash(file_to_delete)
         self._model.remove_file_from_list(file_to_delete)
 

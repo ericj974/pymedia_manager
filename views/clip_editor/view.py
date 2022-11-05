@@ -41,6 +41,11 @@ class ClipEditorWindow(QMainWindow):
         # Listen for new action params creation and reset relevant sliders
         self.media_widget.new_action_created.connect(self._reset_lum_contrast_sliders)
 
+        # drop event
+        self.setAcceptDrops(True)
+        self.__class__.dragEnterEvent = lambda _, event: event.acceptProposedAction()
+        self.__class__.dropEvent = self.on_drop_media
+
         self.setMinimumSize(300, 200)
         self.setWindowTitle("Clip Editor")
         self.showMaximized()
@@ -50,7 +55,7 @@ class ClipEditorWindow(QMainWindow):
         # Open selected image
         if self._model.media_path:
             ext = os.path.splitext(self._model.media_path)[1][1:]
-            if ext in FILE_EXTENSION_PHOTO_JPG:
+            if ext in FILE_EXTENSION_VIDEO:
                 self.open_media(file=self._model.media_path)
             else:
                 self.media_widget.reset()
@@ -69,6 +74,17 @@ class ClipEditorWindow(QMainWindow):
         ok = self.open_media(file=path)
         if ok or self.isVisible():
             self.show()
+
+    @pyqtSlot(str)
+    def on_drop_media(self, event):
+        for url in event.mimeData().urls():
+            path = url.toLocalFile()
+            if os.path.isfile(path):
+                ext = os.path.splitext(path)[1][1:]
+                if ext in FILE_EXTENSION_VIDEO:
+                    self._controller.set_media_path(path)
+            break
+
 
     def create_actions_shortcuts(self):
         # Actions for Editor menu
@@ -143,9 +159,10 @@ class ClipEditorWindow(QMainWindow):
         self.fit_to_window_act.setChecked(True)
 
         # And the shortcuts
-        QShortcut(QtCore.Qt.Key.Key_Right, self, self._controller.select_next_media)
-        QShortcut(QtCore.Qt.Key.Key_Left, self, self._controller.select_prev_media)
-        QShortcut(QtCore.Qt.Key.Key_Delete, self, self._controller.delete_cur_media)
+        QShortcut(QtCore.Qt.Key.Key_Right, self, lambda: self._controller.select_next_media(
+            extension=FILE_EXTENSION_VIDEO))
+        QShortcut(QtCore.Qt.Key.Key_Left, self, lambda: self._controller.select_prev_media(extension=FILE_EXTENSION_VIDEO))
+        QShortcut(QtCore.Qt.Key.Key_Delete, self, lambda: self._controller.delete_cur_media(extension=FILE_EXTENSION_VIDEO))
 
     def create_menus(self):
         """Set up the menubar."""
