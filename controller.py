@@ -107,7 +107,7 @@ class MainController:
 
     def delete_cur_media(self, extension= FILE_EXTENSION_MEDIA):
         file_to_delete = self._model.media_path
-        self.select_next_media(extension=filter)
+        self.select_next_media(extension=extension)
         send2trash(file_to_delete)
         self._model.remove_file_from_list(file_to_delete)
 

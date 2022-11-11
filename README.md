@@ -30,6 +30,7 @@ This is the main source code repository for my picture manager.
 
 ```bash
    sudo apt-get install build-essential
+   sudo snap install cmake --classic
 ```
 
 ***Build and setup dlib***
