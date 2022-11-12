@@ -1,4 +1,7 @@
-import face_recognition
+import logging
+import os
+import sys
+
 import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, QEvent
@@ -7,10 +10,14 @@ from PyQt5.QtWidgets import QVBoxLayout, QListWidget, QLineEdit, \
     QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton, QAbstractItemView
 
 from utils import QImageToCvMat, image_resize
-from views.face_editor.utils import FaceDetectionDB
+from views.face_editor import utils
+from views.face_editor.db import FaceDetectionDB
+from views.face_editor.utils import detection_backend, face_recognition_model
 
 unknown_tag = "unknown"
 
+# logging
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
 
 class MyTextEdit(QtWidgets.QTextEdit):
     def __init__(self, parent=None):
@@ -104,10 +111,17 @@ class FaceDetectionWidget(QtWidgets.QWidget):
 
         self.db = FaceDetectionDB(db_folder)
 
+        # Detection model selection
+        self.detection_model_combobox = QtWidgets.QComboBox()
+        self.detection_model_combobox.addItems(detection_backend)
+        self.face_model_combobox = QtWidgets.QComboBox()
+        self.face_model_combobox.addItems(face_recognition_model)
+
         # Search bar.
         self.searchbar = QLineEdit()
         self.searchbar.textChanged.connect(self.update_display_when_searching)
 
+        # Listing of existing face tags
         self.list_db_tags_widget = MyListWidget()
         self.list_db_tags_widget.doubleClicked.connect(self.on_db_table_clicked)
         self.list_db_tags_widget.__class__.dropEvent = self.on_db_drop
@@ -118,11 +132,11 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.scroll_db.setWidgetResizable(True)
         self.scroll_db.setWidget(self.list_db_tags_widget)
 
-        # Detection part
+        # Listing of detection results
         self.result_widget = MyListWidget()
         self.list_db_tags_widget.src_widget = self.result_widget
-        # self.result_widget.setSelectionModel(QtGui.QItem)
         self.result_widget.installEventFilter(self)
+
         self.scroll_detection = QScrollArea()
         self.scroll_detection.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll_detection.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -140,6 +154,10 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         # Set layout for dock widget
         vlay = QVBoxLayout()
         self.setLayout(vlay)
+        vlay.addWidget(QLabel("Detection Backend"))
+        vlay.addWidget(self.detection_model_combobox)
+        vlay.addWidget(QLabel("Face Recognition Model"))
+        vlay.addWidget(self.face_model_combobox)
         vlay.addWidget(self.searchbar)
         vlay.addWidget(QtWidgets.QLabel("Existing Tags"))
         vlay.addWidget(self.scroll_db, 2)
@@ -164,14 +182,21 @@ class FaceDetectionWidget(QtWidgets.QWidget):
     def _detect_faces(self, qimage):
 
         frame_orig = QImageToCvMat(qimage)
+        # Get and reduce img
+        # if frame_orig.shape[0] > frame_orig.shape[1]:
+        #     frame = image_resize(frame_orig, height=800)
+        # else:
+        #     frame = image_resize(frame_orig, width=800)
+        # r = qimage.height() / frame.shape[0]
+        frame = frame_orig.copy()
+        r = 1.
 
-        if frame_orig.shape[0] > frame_orig.shape[1]:
-            frame = image_resize(frame_orig, height=800)
-        else:
-            frame = image_resize(frame_orig, width=800)
-        r = qimage.height() / frame.shape[0]
-        face_locations = face_recognition.face_locations(frame)
-        self.face_encodings = face_recognition.face_encodings(frame, face_locations)
+        # Detection and Representation
+        detection_backend = self.detection_model_combobox.itemText(self.detection_model_combobox.currentIndex())
+        face_recognition_model = self.face_model_combobox.itemText(self.face_model_combobox.currentIndex())
+
+        patches, face_locations = utils.face_locations(frame, detector_backend=detection_backend)
+        self.face_encodings = utils.face_encodings(imgs=patches, model_name=face_recognition_model)
         self.face_imgs = []
         self.face_locations = []
         for (top, right, bottom, left) in face_locations:
@@ -181,14 +206,15 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.face_names = []
         for face_encoding in self.face_encodings:
             # See if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(self.db.known_face_encodings, face_encoding)
+            known_face_encodings = self.db.get_embeddings(model=face_recognition_model)
+            matches = utils.compare_faces(known_face_encodings, face_encoding)
             name = unknown_tag
 
             # If a match was found in known_face_encodings, select the on with the lowest distance
             if True in matches:
-                known_face_encodings = np.array(self.db.known_face_encodings)[matches]
+                known_face_encodings = np.array(known_face_encodings)[matches]
                 known_face_names = np.array(self.db.known_face_names)[matches]
-                face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+                face_distances = utils.face_distance(known_face_encodings, face_encoding)
                 best_match_index = np.argmin(face_distances)
                 name = known_face_names[best_match_index]
             self.face_names.append(name)
@@ -219,15 +245,39 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.update_det_result_display()
 
     def save_selected_det_to_db(self):
+
         for item, index in zip(self.result_widget.selectedItems(),
                                self.result_widget.selectionModel().selectedIndexes()):
             if item.text() == unknown_tag:
                 continue
             ind = index.row()
-            self.db.add_to_db(name=self.face_names[ind],
-                              encoding=self.face_encodings[ind],
-                              img=self.face_imgs[ind],
+            name = self.face_names[ind]
+            img = self.face_imgs[ind]
+            filename = os.path.basename(self.file)
+
+            # Add an entry without encodings
+            self.db.add_to_db(name=name,
+                              img=img,
                               file=self.file)
+
+            # Create encoding for all recognition models
+            for model in face_recognition_model:
+                item = self.db.get_entry(name=name, filename=filename)
+                if model in item['embeddings']:
+                    continue
+                logging.info(f"Creating embedding for model {model}")
+
+                # Representation
+                embedding = utils.face_encodings(imgs=[img], model_name=model)[0]
+
+                # Add to db
+                self.db.update_embedding_entry(name=item['name'], embedding=embedding,
+                                                    filename=item['filename'], model=model)
+
+            # self.db.add_to_db(name=self.face_names[ind],
+            #                   encoding=self.face_encodings[ind],
+            #                   img=self.face_imgs[ind],
+            #                   file=self.file)
         self.update_db_display()
 
     def eventFilter(self, source, event):

@@ -19,12 +19,13 @@ icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
 class FaceEditorWindow(QMainWindow):
 
-    def __init__(self, model: MainModel, controller: MainController, config: dict):
+    def __init__(self, model: MainModel, controller: MainController, config: dict = None, db_folder = ''):
         super().__init__()
 
         self._model = model
         self._controller = controller
-        self._db_folder = config["DB_FOLDER"]
+        assert config is not None or db_folder != '', "Config or db_folder is to be provided"
+        self._db_folder = config["DB_FOLDER"] if config else db_folder
         self.cumul_scale_factor = 1
         self.file = ''
 

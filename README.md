@@ -22,7 +22,7 @@ This is the main source code repository for my picture manager.
     conda activate media
     pip install pyheif
    ```
-### face_recognition lib
+### Dlib lib for deepface
 
 **Clone / compile / install dlib dependency**
 
@@ -46,12 +46,6 @@ Steps coming from [this link](https://gist.github.com/ageitgey/629d75c1baac34dfa
    python3 setup.py install 
    ```
 
-**Install face_recognition**
-
-   ```bash
-   conda activate media
-   pip install face_recognition
-   ```
 ## Setup the configuration File
 
 The app will look first for `config.json` to run, and use by default `config_default.json` if not found.

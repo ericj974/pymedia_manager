@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - python=3.* #  - libstdcxx-ng # Bug fix for "Cannot load `swrast` and `iris` drivers"
+  - deepface
   - numpy
   - opencv
   - pillow
@@ -16,5 +17,3 @@ dependencies:
   - pip
   - pip:
       - moviepy # Bug with func if using 1.0.3 conda version
-#      - pyheif
-#      - face_recognition
