@@ -11,6 +11,7 @@ import utils
 from constants import FILE_EXTENSION_PHOTO_JPG, FILE_EXTENSION_PHOTO
 from controller import MainController
 from model import MainModel
+from views.face_editor.controller_model import FaceDetectionModel, FaceDetectionController
 from views.face_editor.db import FaceDetectionDB
 from views.face_editor.widgets import FaceTagWidget, FaceDetectionWidget
 from views.face_editor.utils import unknown_tag
@@ -21,13 +22,17 @@ icon_path = os.path.join(os.path.dirname(os.path.abspath(icons.__file__)))
 
 class FaceEditorWindow(QMainWindow):
 
-    def __init__(self, model: MainModel, controller: MainController, db, config: dict = None):
+    def __init__(self, model: MainModel, controller: MainController,
+                 model_local: FaceDetectionModel, controller_local: FaceDetectionController, config: dict = None):
         super().__init__()
 
+        # MVC global
         self._model = model
         self._controller = controller
-        assert config is not None or db is not None, "Config or db is to be provided"
-        self.db = db if db else FaceDetectionDB(config["DB_FOLDER"])
+
+        # MVC Local
+        self._model_local = model_local
+        self._controller_local = controller_local
 
         self.cumul_scale_factor = 1
         self.file = ''
@@ -173,7 +178,7 @@ class FaceEditorWindow(QMainWindow):
         self.editing_bar.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.editing_bar.setMinimumWidth(90)
 
-        self.det_face_widget = FaceDetectionWidget(db=self.db)
+        self.det_face_widget = FaceDetectionWidget(db=self._model_local.db)
         self.det_face_widget.result_widget.clicked.connect(self.on_table_double_clicked)
         self.editing_bar.setWidget(self.det_face_widget)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.editing_bar)

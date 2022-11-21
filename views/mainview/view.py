@@ -8,6 +8,7 @@ from constants import FILE_EXTENSION_PHOTO_JPG
 from controller import MainController
 from model import MainModel
 from views.clip_editor.view import ClipEditorWindow
+from views.face_editor.controller_model import FaceDetectionModel, FaceDetectionController
 from views.face_editor.db import FaceDetectionDB
 from views.face_editor.view import FaceEditorWindow
 from views.face_editor.view_batch import FaceEditorBatchWindow
@@ -66,9 +67,11 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.tile_window = None
         # GPS Dialog
         self.gps_window = None
+
         # Face editor Dialog
         db_folder = self.config[FaceEditorWindow.__name__]["DB_FOLDER"]
-        self.face_db = FaceDetectionDB(db_folder)
+        self._model_face = FaceDetectionModel(db=FaceDetectionDB(db_folder))
+        self._controller_face = FaceDetectionController(model=self._model_face )
         self.face_editor = None
         self.face_editor_batch = None
 
@@ -134,7 +137,8 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
         config = self.config[FaceEditorWindow.__name__]
         if not self.face_editor:
-            self.face_editor = FaceEditorWindow(model=self._model, controller=self._controller, db=self.face_db)
+            self.face_editor = FaceEditorWindow(model=self._model, controller=self._controller,
+                                                model_local=self._model_face, controller_local=self._controller_face)
             self.face_editor.destroyed.connect(_on_destroyed)
         self.face_editor.show()
 
@@ -144,7 +148,8 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
         if not self.face_editor_batch:
             self.face_editor_batch = FaceEditorBatchWindow(model=self._model, controller=self._controller,
-                                                           db=self.face_db)
+                                                           db=self.face_db, model_local=self._model_face,
+                                                           controller_local=self._controller_face)
             self.face_editor_batch.destroyed.connect(_on_destroyed)
         self.face_editor_batch.show()
 

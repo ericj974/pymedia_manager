@@ -15,19 +15,22 @@ from controller import MainController
 from model import MainModel
 from utils import load_image
 from views.face_editor import utils
+from views.face_editor.controller_model import DetectionResult, FaceDetectionController, FaceDetectionModel
 
 
 class FaceEditorBatchWindow(QMainWindow):
 
-    def __init__(self, model: MainModel, controller: MainController, db):
-        super().__init__()
+    def __init__(self, model: MainModel, controller: MainController,
+                 model_local: FaceDetectionModel, controller_local: FaceDetectionController):
+        super(QMainWindow, self).__init__()
 
-        # MVC
+        # MVC global
         self._model = model
         self._controller = controller
 
-        # DB
-        self.db = db
+        # MVC Local
+        self._model_local = model_local
+        self._controller_local = controller_local
 
         # Central widget
         self.central_widget = QtWidgets.QWidget(self)
@@ -89,11 +92,7 @@ class FaceEditorBatchWindow(QMainWindow):
         file = self.table_result.item(row, 0).file
         self._controller.set_media_path(file)
 
-class MyQTableWidgetItem(QTableWidgetItem):
+class MyQTableWidgetItem(QTableWidgetItem, DetectionResult):
     def __init__(self, filename, file, encoding, img, location, name):
-        super().__init__(filename)
-        self.file = file
-        self.encoding = encoding
-        self.img = img
-        self.location = location
-        self.name = name
+        super(QTableWidgetItem, self).__init__(filename)
+        super(DetectionResult, self).__init__(file, encoding, img, location, name)
