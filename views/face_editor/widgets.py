@@ -2,22 +2,18 @@ import logging
 import os
 import sys
 
-import numpy as np
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QDragMoveEvent
 from PyQt5.QtWidgets import QVBoxLayout, QListWidget, QLineEdit, \
     QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton, QAbstractItemView
 
-from utils import QImageToCvMat, image_resize
 from views.face_editor import utils
 from views.face_editor.db import FaceDetectionDB
-from views.face_editor.utils import detection_backend, face_recognition_model
-
-unknown_tag = "unknown"
 
 # logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
+
 
 class MyTextEdit(QtWidgets.QTextEdit):
     def __init__(self, parent=None):
@@ -36,7 +32,7 @@ class MyTextEdit(QtWidgets.QTextEdit):
 class MyListWidget(QListWidget):
     def __init__(self, parent=None):
         super(MyListWidget, self).__init__(parent)
-        self.setSelectionMode(QAbstractItemView.ExtendedSelection);
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
         self.setDragDropMode(QAbstractItemView.DragDrop)
@@ -106,16 +102,16 @@ class FaceTagWidget(QtWidgets.QWidget):
 
 
 class FaceDetectionWidget(QtWidgets.QWidget):
-    def __init__(self, db_folder, *args, **kwargs):
+    def __init__(self, db, *args, **kwargs):
         QtWidgets.QWidget.__init__(self, *args, **kwargs)
 
-        self.db = FaceDetectionDB(db_folder)
 
+        self.db = db
         # Detection model selection
         self.detection_model_combobox = QtWidgets.QComboBox()
-        self.detection_model_combobox.addItems(detection_backend)
+        self.detection_model_combobox.addItems(utils.detection_backend)
         self.face_model_combobox = QtWidgets.QComboBox()
-        self.face_model_combobox.addItems(face_recognition_model)
+        self.face_model_combobox.addItems(utils.face_recognition_model)
 
         # Search bar.
         self.searchbar = QLineEdit()
@@ -181,43 +177,18 @@ class FaceDetectionWidget(QtWidgets.QWidget):
 
     def _detect_faces(self, qimage):
 
-        frame_orig = QImageToCvMat(qimage)
-        # Get and reduce img
-        # if frame_orig.shape[0] > frame_orig.shape[1]:
-        #     frame = image_resize(frame_orig, height=800)
-        # else:
-        #     frame = image_resize(frame_orig, width=800)
-        # r = qimage.height() / frame.shape[0]
-        frame = frame_orig.copy()
-        r = 1.
-
         # Detection and Representation
         detection_backend = self.detection_model_combobox.itemText(self.detection_model_combobox.currentIndex())
         face_recognition_model = self.face_model_combobox.itemText(self.face_model_combobox.currentIndex())
 
-        patches, face_locations = utils.face_locations(frame, detector_backend=detection_backend)
-        self.face_encodings = utils.face_encodings(imgs=patches, model_name=face_recognition_model)
-        self.face_imgs = []
-        self.face_locations = []
-        for (top, right, bottom, left) in face_locations:
-            (top, right, bottom, left) = (int(top * r), int(right * r), int(bottom * r), int(left * r))
-            self.face_imgs.append(frame_orig[top:bottom, left:right])
-            self.face_locations.append((top, right, bottom, left))
-        self.face_names = []
-        for face_encoding in self.face_encodings:
-            # See if the face is a match for the known face(s)
-            known_face_encodings = self.db.get_embeddings(model=face_recognition_model)
-            matches = utils.compare_faces(known_face_encodings, face_encoding)
-            name = unknown_tag
+        encodings, imgs, locations, names = utils.face_recognition(qimage=qimage, detection_backend=detection_backend,
+                                                                   face_recognition_model=face_recognition_model,
+                                                                   db=self.db)
 
-            # If a match was found in known_face_encodings, select the on with the lowest distance
-            if True in matches:
-                known_face_encodings = np.array(known_face_encodings)[matches]
-                known_face_names = np.array(self.db.known_face_names)[matches]
-                face_distances = utils.face_distance(known_face_encodings, face_encoding)
-                best_match_index = np.argmin(face_distances)
-                name = known_face_names[best_match_index]
-            self.face_names.append(name)
+        self.face_encodings = encodings
+        self.face_imgs = imgs
+        self.face_locations = locations
+        self.face_names = names
 
         # Show in list widget
         self.update_det_result_display()
@@ -248,7 +219,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
 
         for item, index in zip(self.result_widget.selectedItems(),
                                self.result_widget.selectionModel().selectedIndexes()):
-            if item.text() == unknown_tag:
+            if item.text() == utils.unknown_tag:
                 continue
             ind = index.row()
             name = self.face_names[ind]
@@ -261,9 +232,9 @@ class FaceDetectionWidget(QtWidgets.QWidget):
                               file=self.file)
 
             # Create encoding for all recognition models
-            for model in face_recognition_model:
+            for model in utils.face_recognition_model:
                 item = self.db.get_entry(name=name, filename=filename)
-                if model in item['embeddings']:
+                if model in item.embeddings:
                     continue
                 logging.info(f"Creating embedding for model {model}")
 
@@ -271,8 +242,8 @@ class FaceDetectionWidget(QtWidgets.QWidget):
                 embedding = utils.face_encodings(imgs=[img], model_name=model)[0]
 
                 # Add to db
-                self.db.update_embedding_entry(name=item['name'], embedding=embedding,
-                                                    filename=item['filename'], model=model)
+                self.db.update_embedding_entry(name=item.name, embedding=embedding,
+                                               filename=item.filename, model=model)
 
             # self.db.add_to_db(name=self.face_names[ind],
             #                   encoding=self.face_encodings[ind],

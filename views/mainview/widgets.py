@@ -3,13 +3,21 @@ import os
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from constants import FILE_EXTENSION_MEDIA, FILE_EXTENSION_PHOTO_JPG
+
 
 class FileExplorerWidget(QWidget):
+    # Change of directory path
+    selected_files_face_det = pyqtSignal()
+
     def __init__(self, *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
         hlay = QHBoxLayout(self)
         self.treeview = QTreeView()
         self.listview = QListView()
+        self.listview.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.listview.installEventFilter(self)
+
         hlay.addWidget(self.treeview)
         hlay.addWidget(self.listview)
 
@@ -21,8 +29,7 @@ class FileExplorerWidget(QWidget):
 
         self.fileModel = QFileSystemModel()
         self.fileModel.setFilter(QDir.NoDotAndDotDot | QDir.Files)
-        self.fileModel.setNameFilters(["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.heic", '*.mp4'])
-
+        self.fileModel.setNameFilters(['*.' + ext for ext in FILE_EXTENSION_MEDIA])
         self.treeview.setModel(self.dirModel)
         self.listview.setModel(self.fileModel)
 
@@ -45,3 +52,17 @@ class FileExplorerWidget(QWidget):
         idx = self.dirModel.setRootPath(parentpath)
         self.treeview.setRootIndex(idx)
         self.listview.setRootIndex(self.fileModel.setRootPath(dirpath))
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.ContextMenu and source is self.listview:
+            menu = QMenu()
+            action = QAction('Face Detection', self)
+            action.triggered.connect(lambda: self.selected_files_face_det.emit())
+            menu.addAction(action)
+            if menu.exec_(event.globalPos()):
+                item = source.itemAt(event.pos())
+            return True
+        return super().eventFilter(source, event)
+
+
+

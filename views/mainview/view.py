@@ -1,12 +1,16 @@
+import os
 from functools import partial
 
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import *
 
+from constants import FILE_EXTENSION_PHOTO_JPG
 from controller import MainController
 from model import MainModel
 from views.clip_editor.view import ClipEditorWindow
+from views.face_editor.db import FaceDetectionDB
 from views.face_editor.view import FaceEditorWindow
+from views.face_editor.view_batch import FaceEditorBatchWindow
 from views.gps.view import MainGPSWindow
 from views.img_editor.view import PhotoEditorWindow
 from views.mainview import gui
@@ -31,6 +35,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
         self.widget.treeview.doubleClicked.connect(self.on_treeview_doubleclick)
         self.widget.listview.doubleClicked.connect(self.on_listview_doubleclick)
+        self.widget.selected_files_face_det.connect(self.on_selected_files_face_det)
 
         # listen for model event signals
         self._model.selected_dir_changed.connect(self.on_dirpath_changed)
@@ -45,7 +50,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.pushButton_editor_vid.clicked.connect(partial(self.launch_editor_vid, True))
         self.pushButton_tileview.clicked.connect(self.launch_tile_view)
         self.pushButton_gps.clicked.connect(self.launch_gps_window)
-        self.pushButton_editor_face.clicked.connect(self.launch_editor_face)
+        self.pushButton_editor_face.clicked.connect(self.launch_face_editor)
 
         # Connect the drop
         self.__class__.dragEnterEvent = self.dragEnterEvent
@@ -62,7 +67,10 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         # GPS Dialog
         self.gps_window = None
         # Face editor Dialog
+        db_folder = self.config[FaceEditorWindow.__name__]["DB_FOLDER"]
+        self.face_db = FaceDetectionDB(db_folder)
         self.face_editor = None
+        self.face_editor_batch = None
 
     def launch_renamer(self):
         def _on_destroyed():
@@ -120,15 +128,25 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         self.gps_window.set_dirpath(self._model.dirpath)
         self.gps_window.show()
 
-    def launch_editor_face(self):
+    def launch_face_editor(self):
         def _on_destroyed():
             self.face_editor = None
 
         config = self.config[FaceEditorWindow.__name__]
         if not self.face_editor:
-            self.face_editor = FaceEditorWindow(model=self._model, controller=self._controller, config=config)
+            self.face_editor = FaceEditorWindow(model=self._model, controller=self._controller, db=self.face_db)
             self.face_editor.destroyed.connect(_on_destroyed)
         self.face_editor.show()
+
+    def launch_face_editor_batch(self):
+        def _on_destroyed():
+            self.face_editor_batch = None
+
+        if not self.face_editor_batch:
+            self.face_editor_batch = FaceEditorBatchWindow(model=self._model, controller=self._controller,
+                                                           db=self.face_db)
+            self.face_editor_batch.destroyed.connect(_on_destroyed)
+        self.face_editor_batch.show()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -160,3 +178,14 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
         index = self.widget.fileModel.index(file, 0)
         if index.row() != -1:
             self.widget.listview.setCurrentIndex(index)
+
+    @pyqtSlot()
+    def on_selected_files_face_det(self):
+        files = []
+        for ind in self.widget.listview.selectedIndexes():
+            file = self.widget.fileModel.filePath(ind)
+            _, file_extension = os.path.splitext(file)
+            file_extension = file_extension[1:]
+            if file_extension in FILE_EXTENSION_PHOTO_JPG:
+                files.append(file)
+        self.face_editor_batch.detect_faces_batch(files)

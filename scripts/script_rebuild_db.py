@@ -61,12 +61,12 @@ class FaceDetectionDBConverter(object):
             logging.info(f"Creating embedding for model {model}")
             for i in range(len(db)):
                 v = db[str(i)]
-                embeddings = v['embeddings']
+                embeddings = v.embeddings
                 if model in embeddings:
                     continue
-                logging.info(f"Updating embeddings for {v['name']} with model {model}")
+                logging.info(f"Updating embeddings for {v.name} with model {model}")
                 # Read file
-                file = os.path.join(self.face_db.db_img_folder, v['name'], v['filename'])
+                file = os.path.join(self.face_db.db_img_folder, v.name, v.filename)
                 qimage, _ = load_image(file)
                 frame = QImageToCvMat(qimage)
 
@@ -74,54 +74,14 @@ class FaceDetectionDBConverter(object):
                 embedding = face_encodings(imgs=[frame], model_name=model)[0]
 
                 # Add to db
-                self.face_db.update_embedding_entry(name=v['name'], embedding=embedding,
-                                                    filename=v['filename'], model=model)
-
-    def convert_db(self):
-        db = self.face_db.db
-
-        for i in range(len(db)):
-            v = db[str(i)]
-            db[str(i)] = {
-                'filename': v['filename'],
-                'embeddings': {
-                    'face_recognition': {
-                        'lib': 'face_recognition',
-                        'embedding': v['encoding'],
-                        'hash': v['hash']
-                    }
-                },
-                'name': v['name'],
-            }
-
-        # Serializing json
-        json_object = json.dumps(db, indent=4)
-        # Write to file
-        with open(self.face_db.db_file, 'w') as f:
-            f.write(json_object)
-
-    def convert_db_2(self):
-        db = self.face_db.db
-
-        for i in range(len(db)):
-            v = db[str(i)]
-            db[str(i)] = {
-                'filename': os.path.basename(v['filename']),
-                'embeddings': v['embeddings'],
-                'name': v['name'],
-            }
-
-        # Serializing json
-        json_object = json.dumps(db, indent=4)
-        # Write to file
-        with open(self.face_db.db_file, 'w') as f:
-            f.write(json_object)
+                self.face_db.update_embedding_entry(name=v.name, embedding=embedding,
+                                                    filename=v.filename, model=model)
 
 
 def main():
     # Initialization
     args = argparser.parse_args()
-    dir_path = args.folder
+    dir_path = args.dir
     if not os.path.isdir(dir_path):
         logging.error("input path does not exist or is not a folder...exiting.")
         sys.exit()

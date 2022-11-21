@@ -3,11 +3,59 @@ import logging
 import os
 
 import cv2
+import numpy as np
 
 from utils import Singleton
 
 db_json_filename = 'dataset.json'
 db_img_foldername = 'images'
+
+
+class FaceDetectionDBItem:
+    def __init__(self, name, filename):
+        self.name = name
+        self.filename = filename
+        self.embeddings = {}
+
+    def to_dict(self):
+        return {
+            'filename': self.filename,
+            'embeddings': self.embeddings,
+            'name': self.name,
+        }
+
+    def get_models(self):
+        return self.embeddings.keys()
+
+    def get_embedding(self, model):
+        return self.embeddings.get(model, {}).get('embedding', None)
+
+    def get_hash(self, model):
+        return self.embeddings.get(model, {}).get('hash', None)
+
+    def set_embedding(self, model, embedding):
+        _dic = {
+            'lib': 'face_recognition' if model == 'face_recognition' else 'deepface',
+            'embedding': embedding if isinstance(embedding, list) else embedding.tolist(),
+            'hash': str(hash(embedding.tobytes())) if not isinstance(embedding, list) else str(
+                hash(np.array(embedding).tobytes()))
+        }
+        self.embeddings[model] = _dic
+
+    @staticmethod
+    def create(name, filename, model='', embedding=None):
+        item = FaceDetectionDBItem(name=name, filename=filename)
+        if model != '' and embedding is not None:
+            item.set_embedding(model=model, embedding=embedding)
+        return item
+
+    @staticmethod
+    def from_dict(dic):
+        item = FaceDetectionDBItem.create(name=dic['name'], filename=dic['filename'])
+        for model, value in dic['embeddings'].items():
+            item.set_embedding(model=model, embedding=value['embedding'])
+        return item
+
 
 class FaceDetectionDB(metaclass=Singleton):
 
@@ -18,18 +66,25 @@ class FaceDetectionDB(metaclass=Singleton):
         self.db_file = os.path.join(db_folder, db_json_filename)
         self.db_img_folder = os.path.join(db_folder, db_img_foldername)
 
-        # Raw database
+        # Database
         self.db = {}
-        # Re-structured params for face_detection
-        # Create arrays of known face encodings and their names
-        self.known_face_embeddings = []
-        self.known_face_names = []
-        self.known_face_filenames = []
 
         self.load_db()
 
+    @property
+    def known_face_names(self):
+        return [item.name for item in self.db.values()]
+
+    @property
+    def known_face_filenames(self):
+        return [item.filename for item in self.db.values()]
+
+    @property
+    def known_face_embeddings(self):
+        return [item.embeddings for item in self.db.values()]
+
     def get_embeddings(self, model='face_recognition'):
-        return [v['embeddings'][f'{model}']['embedding'] for v in self.db.values()]
+        return [item.get_embedding(model) for item in self.db.values()]
 
     def load_db(self):
         # If no content, create empty json file
@@ -43,25 +98,23 @@ class FaceDetectionDB(metaclass=Singleton):
 
         # Opening JSON file
         with open(self.db_file, 'r') as f:
-            self.db = json.load(f)
-
-        for i in range(len(self.db)):
-            v = self.db[str(i)]
-            self.known_face_names.append(v['name'])
-            self.known_face_filenames.append(v['filename'])
-            self.known_face_embeddings.append(v['embeddings'])
+            _db = json.load(f)
+            for k, v in _db.items():
+                self.db[k] = FaceDetectionDBItem.from_dict(v)
 
         return True
 
     def save_db(self):
+        # Getting the json
+        _json = {k: v.to_dict() for k, v in self.db.items()}
         # Serializing json
-        json_object = json.dumps(self.db, indent=4)
+        json_object = json.dumps(_json, indent=4)
         # Write to file
         with open(self.db_file, 'w') as f:
             f.write(json_object)
 
     def get_entry(self, name, filename):
-        uids = [os.path.join(v['name'], v['filename']) for v in self.db.values()]
+        uids = [os.path.join(item.name, item.filename) for item in self.db.values()]
         uid = os.path.join(name, filename)
         try:
             ind = uids.index(uid)
@@ -70,18 +123,13 @@ class FaceDetectionDB(metaclass=Singleton):
             return None
 
     def update_embedding_entry(self, name, filename, model, embedding):
-        uids = [os.path.join(v['name'], v['filename']) for v in self.db.values()]
+        uids = [os.path.join(item.name, item.filename) for item in self.db.values()]
         uid = os.path.join(name, filename)
         assert uid in uids, "Name + Filename not found in DB"
 
         ind = uids.index(uid)
         item = self.db[str(ind)]
-        if model in item['embeddings']:
-            # Update embedding
-            item['embeddings'][model]['embedding'] = embedding
-        else:
-            new_item = self.create_item(name=name, encoding=embedding, filename=filename, enc_hash=None, model=model)
-            item['embeddings'][model] = new_item['embeddings'][model]
+        item.set_embedding(model=model, embedding=embedding)
 
         # Save db
         self.save_db()
@@ -100,18 +148,17 @@ class FaceDetectionDB(metaclass=Singleton):
         filename_out = os.path.basename(file)
         file_out = os.path.join(self.db_img_folder, name, filename_out)
 
-
         index = str(len(self.db))
         item = self.create_item(name=name, encoding=encoding, filename=filename_out, model=model)
         item_remove = None
 
         # We simply updated the name, or the filename here
-        known_face_hashes = [v['embeddings'][f'{model}']['hash'] for v in self.db.values() if
-                             f'{model}' in v['embeddings']]
+        known_face_hashes = [item.get_hash(model) for item in self.db.values() if
+                             model in item.get_models()]
 
-        hash = item['embeddings'].get(model, {}).get('hash', None)
-        if hash is not None and hash in known_face_hashes:
-            ind = known_face_hashes.index(item['hash'])
+        item_hash = item.get_hash(model=model)
+        if item_hash is not None and item_hash in known_face_hashes:
+            ind = known_face_hashes.index(item_hash)
             # Update the name if different name
             if name == self.known_face_names[ind]:
                 logging.warning('FaceDB: Duplicate entry with same hash. Skip saving...')
@@ -119,26 +166,15 @@ class FaceDetectionDB(metaclass=Singleton):
             else:
                 index = str(ind)
                 item_remove = self.db[index]
-        # Check that not another item with the same hash
-        self.db[index] = item
-        if item_remove is not None:
-            self.known_face_names[int(index)] = name
-            self.known_face_filenames[int(index)] = filename_out
 
-            embeddings = self.known_face_embeddings[int(index)]
-            embeddings[f'{model}'] = item['embeddings'][f'{model}']
-            self.known_face_embeddings[int(index)] = embeddings
-        else:
-            self.known_face_names.append(name)
-            self.known_face_filenames.append(filename_out)
-            self.known_face_embeddings.append(item['embeddings'])
+        self.db[index] = item
 
         # Save db
         self.save_db()
 
         # Delete old img
         if item_remove is not None:
-            file_old = os.path.join(self.db_img_folder, item_remove['filename'])
+            file_old = os.path.join(self.db_img_folder, item_remove.filename)
             os.remove(file_old)
             if len(os.listdir(os.path.dirname(file_old))) == 0:
                 os.rmdir(os.path.dirname(file_old))
@@ -151,17 +187,5 @@ class FaceDetectionDB(metaclass=Singleton):
         return True
 
     @staticmethod
-    def create_item(name, filename, model='', encoding=None, enc_hash=None):
-        embeddings_dic = {}
-        if model != '' and encoding is not None:
-            enc_hash = enc_hash if enc_hash else str(hash(encoding.tobytes()))
-            embeddings_dic[model] = {
-                'lib': 'face_recognition' if model == 'face_recognition' else 'deepface',
-                'embedding': encoding.tolist(),
-                'hash': enc_hash
-            }
-        return {
-            'filename': filename,
-            'embeddings': embeddings_dic,
-            'name': name,
-        }
+    def create_item(name, filename, model='', encoding=None):
+        return FaceDetectionDBItem.create(name=name, filename=filename, model=model, embedding=encoding)
