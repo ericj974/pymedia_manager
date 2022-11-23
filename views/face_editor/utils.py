@@ -2,9 +2,10 @@ import warnings
 
 import cv2
 import numpy as np
+from PyQt5.QtGui import QImage
 from deepface.detectors import FaceDetector
 
-from utils import QImageToCvMat
+from utils import QImageToCvMat, image_resize, load_image
 
 warnings.filterwarnings("ignore")
 
@@ -25,11 +26,21 @@ if tf_version == 2:
     tf.get_logger().setLevel(logging.ERROR)
 
 
-def face_locations(img, detector_backend='opencv', align=True):
+class DetectionResult:
+
+    def __init__(self, file, embedding, patch, location, name):
+        self.file = file
+        self.embedding = embedding
+        self.patch = patch
+        self.location = location
+        self.name = name
+
+
+def face_locations(img, detection_model='opencv', align=True):
     img = img[:, :, ::-1]  # rgb to bgr
     img_region = [0, 0, img.shape[0], img.shape[1]]
-    face_detector = FaceDetector.build_model(detector_backend)
-    obj = FaceDetector.detect_faces(face_detector, detector_backend, img, align)
+    face_detector = FaceDetector.build_model(detection_model)
+    obj = FaceDetector.detect_faces(face_detector, detection_model, img, align)
     if len(obj) > 0:
         # (top, right, bottom, left)
         regions = [[region[1], region[0] + region[2], region[1] + region[3], region[0]] for _, region in obj]
@@ -43,12 +54,12 @@ def face_locations(img, detector_backend='opencv', align=True):
     return imgs, regions
 
 
-def face_encodings(imgs, model_name='VGG-Face', align=True, normalization='base'):
+def face_encodings(imgs, recognition_model='VGG-Face', align=True, normalization='base'):
     """
     This function represents facial images as vectors.
     Parameters:
         img: numpy array (RGB)
-        model_name (string): VGG-Face, Facenet, OpenFace, DeepFace, DeepID, Dlib, ArcFace.
+        recognition_model (string): VGG-Face, Facenet, OpenFace, DeepFace, DeepID, Dlib, ArcFace.
         model: Built deepface model. A face recognition model is built every call of verify function. You can pass pre-built face recognition model optionally if you will call verify function several times. Consider to pass model if you are going to call represent function in a for loop.
             model = DeepFace.build_model('VGG-Face')
         enforce_detection (boolean): If any face could not be detected in an image, then verify function will return exception. Set this to False not to have this exception. This might be convenient for low resolution images.
@@ -59,7 +70,7 @@ def face_encodings(imgs, model_name='VGG-Face', align=True, normalization='base'
     """
 
     # Build model and determine its specific shape
-    model = build_model(model_name)
+    model = build_model(recognition_model)
     target_size = functions.find_input_shape(model)
 
     # For each detection, compute embedding
@@ -119,47 +130,49 @@ def compare_faces(known_face_encodings, face_encoding_to_check, tolerance=0.55):
     return list(face_distance(known_face_encodings, face_encoding_to_check) <= tolerance)
 
 
-def face_recognition(qimage, detection_backend, face_recognition_model, db):
-    encodings = []
-    imgs = []
-    locations = []
-    names = []
+def face_recognition(file, detection_model, recognition_model, db, max_size=-1):
+    qimage, _ = load_image(file)
+
+    detections = []
 
     frame_orig = QImageToCvMat(qimage)
     # Get and reduce img
-    # if frame_orig.shape[0] > frame_orig.shape[1]:
-    #     frame = image_resize(frame_orig, height=800)
-    # else:
-    #     frame = image_resize(frame_orig, width=800)
-    # r = qimage.height() / frame.shape[0]
+    if max_size > -1:
+        if frame_orig.shape[0] > frame_orig.shape[1]:
+            frame = image_resize(frame_orig, height=800)
+        else:
+            frame = image_resize(frame_orig, width=800)
+        r = qimage.height() / frame.shape[0]
+    else:
+        frame = frame_orig
+        r = 1.
 
-    frame = frame_orig
-    r = 1.
+    patches, locations_scaled = face_locations(frame, detection_model=detection_model)
+    encodings = face_encodings(imgs=patches, recognition_model=recognition_model)
+    known_encodings = db.get_embeddings(recognition_model=recognition_model)
 
-    patches, locations_scaled = face_locations(frame, detector_backend=detection_backend)
-    encodings = face_encodings(imgs=patches, model_name=face_recognition_model)
-
-    for (top, right, bottom, left) in locations_scaled:
+    for (top, right, bottom, left), encoding in zip(locations_scaled, encodings):
         (top, right, bottom, left) = (int(top * r), int(right * r), int(bottom * r), int(left * r))
-        imgs.append(frame_orig[top:bottom, left:right])
-        locations.append((top, right, bottom, left))
+        patch = frame_orig[top:bottom, left:right]
+        # imgs.append(frame_orig[top:bottom, left:right])
+        # locations.append((top, right, bottom, left))
 
-    for face_encoding in encodings:
         # See if the face is a match for the known face(s)
-        known_face_encodings = db.get_embeddings(model=face_recognition_model)
-        matches = compare_faces(known_face_encodings, face_encoding)
+        matches = compare_faces(known_encodings, encoding)
         name = unknown_tag
 
         # If a match was found in known_face_encodings, select the on with the lowest distance
         if True in matches:
-            known_face_encodings = np.array(known_face_encodings)[matches]
+            known_encodings = np.array(known_encodings)[matches]
             known_face_names = np.array(db.known_face_names)[matches]
-            distances = face_distance(known_face_encodings, face_encoding)
+            distances = face_distance(known_encodings, encoding)
             best_match_index = np.argmin(distances)
             name = known_face_names[best_match_index]
-        names.append(name)
 
-    return encodings, imgs, locations, names
+        detections.append(DetectionResult(file=file, embedding=encoding, patch=patch,
+                                          location=(top, right, bottom, left), name=name))
+
+    return detections
 
 
 # 'dlib' is causing issues

@@ -6,9 +6,10 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QDragMoveEvent
 from PyQt5.QtWidgets import QVBoxLayout, QListWidget, QLineEdit, \
-    QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton, QAbstractItemView
+    QScrollArea, QLabel, QMenu, QAction, QHBoxLayout, QPushButton, QAbstractItemView, QListWidgetItem
 
 from views.face_editor import utils
+from views.face_editor.utils import DetectionResult
 from views.face_editor.db import FaceDetectionDB
 
 # logging
@@ -29,9 +30,15 @@ class MyTextEdit(QtWidgets.QTextEdit):
             e.ignore()
 
 
-class MyListWidget(QListWidget):
+class MyQListWidgetItem(QListWidgetItem):
+    def __init__(self, result: DetectionResult):
+        super(QListWidgetItem, self).__init__(os.path.basename(result.file))
+        self.result = result
+
+
+class MyQListWidget(QListWidget):
     def __init__(self, parent=None):
-        super(MyListWidget, self).__init__(parent)
+        super(MyQListWidget, self).__init__(parent)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
@@ -51,7 +58,7 @@ class FaceTagWidget(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, *args, **kwargs)
 
         self.title = QtWidgets.QLabel()
-        self.persons_widget = MyListWidget()
+        self.persons_widget = MyQListWidget()
         self.persons_widget.installEventFilter(self)
 
         vlay = QVBoxLayout()
@@ -105,8 +112,9 @@ class FaceDetectionWidget(QtWidgets.QWidget):
     def __init__(self, db, *args, **kwargs):
         QtWidgets.QWidget.__init__(self, *args, **kwargs)
 
-
+        self.file = ''
         self.db = db
+
         # Detection model selection
         self.detection_model_combobox = QtWidgets.QComboBox()
         self.detection_model_combobox.addItems(utils.detection_backend)
@@ -118,7 +126,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.searchbar.textChanged.connect(self.update_display_when_searching)
 
         # Listing of existing face tags
-        self.list_db_tags_widget = MyListWidget()
+        self.list_db_tags_widget = MyQListWidget()
         self.list_db_tags_widget.doubleClicked.connect(self.on_db_table_clicked)
         self.list_db_tags_widget.__class__.dropEvent = self.on_db_drop
 
@@ -129,7 +137,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.scroll_db.setWidget(self.list_db_tags_widget)
 
         # Listing of detection results
-        self.result_widget = MyListWidget()
+        self.result_widget = MyQListWidget()
         self.list_db_tags_widget.src_widget = self.result_widget
         self.result_widget.installEventFilter(self)
 
@@ -161,37 +169,12 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         vlay.addWidget(self.scroll_detection)
         vlay.addLayout(layout_buttons)
 
-        # Result of the detection
-        self.file = ''
-        self.face_locations = []
-        self.face_encodings = []
-        self.face_names = []
-        self.face_imgs = []
-
         # Display update
         self.update_db_display()
-        self.update_det_result_display()
+        self.set_detection_results([])
 
     def set_file(self, file):
         self.file = file
-
-    def _detect_faces(self, qimage):
-
-        # Detection and Representation
-        detection_backend = self.detection_model_combobox.itemText(self.detection_model_combobox.currentIndex())
-        face_recognition_model = self.face_model_combobox.itemText(self.face_model_combobox.currentIndex())
-
-        encodings, imgs, locations, names = utils.face_recognition(qimage=qimage, detection_backend=detection_backend,
-                                                                   face_recognition_model=face_recognition_model,
-                                                                   db=self.db)
-
-        self.face_encodings = encodings
-        self.face_imgs = imgs
-        self.face_locations = locations
-        self.face_names = names
-
-        # Show in list widget
-        self.update_det_result_display()
 
     def update_display_when_searching(self, text):
         for i in range(self.list_db_tags_widget.count()):
@@ -203,52 +186,44 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         self.list_db_tags_widget.clear()
         self.list_db_tags_widget.addItems(list(set(self.db.known_face_names)))
 
-    def update_det_result_display(self):
+    def set_detection_results(self, results: list):
         self.result_widget.clear()
-        self.result_widget.addItems(self.face_names)
-        self.result_widget.installEventFilter(self)
+
+        items = []
+        for result in results:
+            if result.file == self.file:
+                items.append(result)
+        self.result_widget.addItems(items)
 
     def clear(self):
-        self.face_locations = []
-        self.face_encodings = []
-        self.face_names = []
-        self.face_imgs = []
-        self.update_det_result_display()
+        self.set_detection_results([])
 
     def save_selected_det_to_db(self):
 
         for item, index in zip(self.result_widget.selectedItems(),
                                self.result_widget.selectionModel().selectedIndexes()):
-            if item.text() == utils.unknown_tag:
+            if item.result.name == utils.unknown_tag:
                 continue
-            ind = index.row()
-            name = self.face_names[ind]
-            img = self.face_imgs[ind]
-            filename = os.path.basename(self.file)
 
             # Add an entry without encodings
-            self.db.add_to_db(name=name,
-                              img=img,
-                              file=self.file)
+            self.db.add_to_db(name=item.result.name,
+                              img=item.result.patch,
+                              file=item.result.file)
 
             # Create encoding for all recognition models
             for model in utils.face_recognition_model:
-                item = self.db.get_entry(name=name, filename=filename)
-                if model in item.embeddings:
+                item_db = self.db.get_entry(name=item.result.name, filename=os.path.basename(item.result.file))
+                if model in item_db.embeddings:
                     continue
                 logging.info(f"Creating embedding for model {model}")
 
                 # Representation
-                embedding = utils.face_encodings(imgs=[img], model_name=model)[0]
+                embedding = utils.face_encodings(imgs=[item.result.patch], recognition_model=model)[0]
 
                 # Add to db
-                self.db.update_embedding_entry(name=item.name, embedding=embedding,
-                                               filename=item.filename, model=model)
+                self.db.update_embedding_entry(name=item.result.name, embedding=embedding,
+                                               filename=item.result.filename, model=model)
 
-            # self.db.add_to_db(name=self.face_names[ind],
-            #                   encoding=self.face_encodings[ind],
-            #                   img=self.face_imgs[ind],
-            #                   file=self.file)
         self.update_db_display()
 
     def eventFilter(self, source, event):
@@ -280,3 +255,5 @@ class FaceDetectionWidget(QtWidgets.QWidget):
     def on_db_drop(self, e):
         if (e.source() == self.result_widget):
             self.save_selected_det_to_db()
+
+

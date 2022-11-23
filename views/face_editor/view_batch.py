@@ -15,7 +15,8 @@ from controller import MainController
 from model import MainModel
 from utils import load_image
 from views.face_editor import utils
-from views.face_editor.controller_model import DetectionResult, FaceDetectionController, FaceDetectionModel
+from views.face_editor.controller_model import FaceDetectionController, FaceDetectionModel
+from views.face_editor.utils import DetectionResult
 
 
 class FaceEditorBatchWindow(QMainWindow):
@@ -52,6 +53,12 @@ class FaceEditorBatchWindow(QMainWindow):
         self.table_result.horizontalHeader().setStretchLastSection(False)
         self.table_result.verticalHeader().setCascadingSectionResizes(True)
 
+        # listen for model event signals
+        # self._model.selected_media_changed.connect(self.on_selected_media_changed)
+        # self._model.selected_media_comment_updated.connect(self.on_model_comment_updated)
+        self._model_local.detection_results_changed.connect(self.on_detection_results_changed)
+
+
         self.setMinimumSize(807, 737)
         self.setWindowTitle("Tags")
         self.showMaximized()
@@ -61,38 +68,26 @@ class FaceEditorBatchWindow(QMainWindow):
         # Files
         self.results = {}
 
-    def detect_faces_batch(self, files):
-        self.results = {}
-
+    def on_detection_results_changed(self, _):
+        results = self._model_local.detection_results
         ind = 0
-
-        for file in files:
-            qimage, exif_dict = load_image(file)
-            # Detection and Representation
-            detection_backend = self.detection_model_combobox.itemText(self.detection_model_combobox.currentIndex())
-            face_recognition_model = self.face_model_combobox.itemText(self.face_model_combobox.currentIndex())
-
-            encodings, imgs, locations, names = utils.face_recognition(qimage=qimage,
-                                                                       detection_backend=detection_backend,
-                                                                       face_recognition_model=face_recognition_model,
-                                                                       db=self.db)
-
-            # Keep Track
-            self.results[file] = (file, encodings, imgs, locations, names)
-
-            # Display
-            for (encoding, img, location, name) in zip(encodings, imgs, locations, names):
-                filename = os.path.basename(file)
-                self.table_result.setItem(ind, 0, MyQTableWidgetItem(filename, file, encoding, img, location, name))
-                self.table_result.setItem(ind, 1, QTableWidgetItem(filename))
-                ind +=1
+        # Display
+        for result in results:
+            filename = os.path.basename(result.file)
+            self.table_result.setItem(ind, 0, MyQTableWidgetItem(result))
+            self.table_result.setItem(ind, 1, QTableWidgetItem(filename))
+            ind +=1
 
     def on_table_double_clicked(self, index):
         row = index.row()
         file = self.table_result.item(row, 0).file
         self._controller.set_media_path(file)
 
-class MyQTableWidgetItem(QTableWidgetItem, DetectionResult):
-    def __init__(self, filename, file, encoding, img, location, name):
-        super(QTableWidgetItem, self).__init__(filename)
-        super(DetectionResult, self).__init__(file, encoding, img, location, name)
+class MyQTableWidgetItem(QTableWidgetItem):
+    def __init__(self, result: DetectionResult):
+        super(QTableWidgetItem, self).__init__(os.path.basename(result.file))
+        self.result = result
+
+    @property
+    def file(self):
+        return self.result.file

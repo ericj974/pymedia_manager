@@ -71,7 +71,7 @@ class FaceDetectionDBConverter(object):
                 frame = QImageToCvMat(qimage)
 
                 # Representation
-                embedding = face_encodings(imgs=[frame], model_name=model)[0]
+                embedding = face_encodings(imgs=[frame], recognition_model=model)[0]
 
                 # Add to db
                 self.face_db.update_embedding_entry(name=v.name, embedding=embedding,

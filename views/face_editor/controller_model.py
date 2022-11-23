@@ -1,20 +1,8 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from controller import MainController
-from model import MainModel
 from utils import load_image
 from views.face_editor import utils
-from views.face_editor.utils import detection_backend, face_recognition_model
-
-
-class DetectionResult:
-
-    def __init__(self, file, encoding, img, location, name):
-        self.file = file
-        self.encoding = encoding
-        self.img = img
-        self.location = location
-        self.name = name
+from views.face_editor.utils import detection_backend, face_recognition_model, DetectionResult
 
 
 class FaceDetectionModel(QObject):
@@ -23,7 +11,7 @@ class FaceDetectionModel(QObject):
     # Change of recognition model
     recognition_model_changed = pyqtSignal(str)
     # Detection results
-    detection_results_changed = pyqtSignal(DetectionResult)
+    detection_results_changed = pyqtSignal(list)
 
     def __init__(self, db):
         super(FaceDetectionModel, self).__init__()
@@ -34,21 +22,30 @@ class FaceDetectionModel(QObject):
 
     @property
     def detection_model(self):
-        return self.detection_model
+        return self._detection_model
 
     @detection_model.setter
-    def detection_model(self, value):
+    def detection_model(self, value: str):
         self._detection_model = value
         self.detection_model_changed.emit(value)
 
     @property
     def recognition_model(self):
-        return self.detection_model
+        return self._recognition_model
 
     @recognition_model.setter
-    def recognition_model(self, value):
+    def recognition_model(self, value: str):
         self._recognition_model = value
         self.recognition_model_changed.emit(value)
+
+    @property
+    def detection_results(self):
+        return self._det_results
+
+    @detection_results.setter
+    def detection_results(self, value: list):
+        self._det_results = value
+        self.detection_results_changed.emit(value)
 
 
 class FaceDetectionController:
@@ -65,24 +62,18 @@ class FaceDetectionController:
         assert model in face_recognition_model, "recognition model not recognized"
         self._model.recognition_model = model
 
-    def detect_faces_batch(self, files):
-        self.results = {}
+    def set_detection_results(self, results: list):
+        self._model.detection_results = results
 
-        ind = 0
+    def detect_faces(self, files):
+        detections = []
 
         for file in files:
-            qimage, exif_dict = load_image(file)
-            encodings, imgs, locations, names = utils.face_recognition(qimage=qimage,
-                                                                       detection_backend=self._model.detection_model,
-                                                                       face_recognition_model=self._model.recognition_model,
-                                                                       db=self.db)
+            temp = utils.face_recognition(file=file,
+                                          detection_model=self._model.detection_model,
+                                          recognition_model=self._model.recognition_model,
+                                          db=self._model.db)
+            detections += temp
 
-            # Keep Track
-            self.results[file] = (file, encodings, imgs, locations, names)
-
-            # Display
-            for (encoding, img, location, name) in zip(encodings, imgs, locations, names):
-                filename = os.path.basename(file)
-                self.table_result.setItem(ind, 0, MyQTableWidgetItem(filename, file, encoding, img, location, name))
-                self.table_result.setItem(ind, 1, QTableWidgetItem(filename))
-                ind += 1
+        # Update model
+        self.set_detection_results(detections)

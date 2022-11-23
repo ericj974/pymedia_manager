@@ -48,6 +48,7 @@ class FaceEditorWindow(QMainWindow):
         # listen for model event signals
         self._model.selected_media_changed.connect(self.on_selected_media_changed)
         self._model.selected_media_comment_updated.connect(self.on_model_comment_updated)
+        self._model_local.detection_results_changed.connect(self.on_detection_results_changed)
 
         self.setMinimumSize(300, 200)
         self.setWindowTitle("Face Editor")
@@ -202,10 +203,22 @@ class FaceEditorWindow(QMainWindow):
         self.save_act.setEnabled(True)
 
     def _detect_faces(self):
-        self.det_face_widget._detect_faces(self.media_widget.original_image.copy())
-        self.display_detection()
 
-    def display_detection(self, selected_ind=-1):
+        # Get models
+        detection_model = self.det_face_widget.detection_model_combobox.itemText(self.det_face_widget.detection_model_combobox.currentIndex())
+        recognition_model = self.det_face_widget.face_model_combobox.itemText(self.det_face_widget.face_model_combobox.currentIndex())
+        self._controller_local.set_detection_model(detection_model)
+        self._controller_local.set_recognition_model(recognition_model)
+
+        # Detect
+        self._controller_local.detect_faces([self.file])
+
+    def on_detection_results_changed(self, _):
+        results = self._model_local.detection_results
+        self.display_detection(results)
+        self.det_face_widget.set_detection_results(results)
+
+    def display_detection(self, results, selected_ind=-1):
         painter = QPainter(self.media_widget.qimage)
 
         pen_red = QPen(QtCore.Qt.red)
