@@ -32,7 +32,7 @@ class MyTextEdit(QtWidgets.QTextEdit):
 
 class MyQListWidgetItem(QListWidgetItem):
     def __init__(self, result: DetectionResult):
-        super(QListWidgetItem, self).__init__(os.path.basename(result.file))
+        super(QListWidgetItem, self).__init__(os.path.basename(result.name))
         self.result = result
 
 
@@ -192,8 +192,10 @@ class FaceDetectionWidget(QtWidgets.QWidget):
         items = []
         for result in results:
             if result.file == self.file:
-                items.append(result)
-        self.result_widget.addItems(items)
+                self.result_widget.addItem(MyQListWidgetItem(result))
+        #         items.append(MyQListWidgetItem(result))
+        #
+        # self.result_widget.addItems(items)
 
     def clear(self):
         self.set_detection_results([])

@@ -149,7 +149,7 @@ def face_recognition(file, detection_model, recognition_model, db, max_size=-1):
 
     patches, locations_scaled = face_locations(frame, detection_model=detection_model)
     encodings = face_encodings(imgs=patches, recognition_model=recognition_model)
-    known_encodings = db.get_embeddings(recognition_model=recognition_model)
+    known_encodings = db.get_embeddings(model=recognition_model)
 
     for (top, right, bottom, left), encoding in zip(locations_scaled, encodings):
         (top, right, bottom, left) = (int(top * r), int(right * r), int(bottom * r), int(left * r))

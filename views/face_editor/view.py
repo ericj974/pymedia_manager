@@ -205,8 +205,10 @@ class FaceEditorWindow(QMainWindow):
     def _detect_faces(self):
 
         # Get models
-        detection_model = self.det_face_widget.detection_model_combobox.itemText(self.det_face_widget.detection_model_combobox.currentIndex())
-        recognition_model = self.det_face_widget.face_model_combobox.itemText(self.det_face_widget.face_model_combobox.currentIndex())
+        detection_model = self.det_face_widget.detection_model_combobox.itemText(
+            self.det_face_widget.detection_model_combobox.currentIndex())
+        recognition_model = self.det_face_widget.face_model_combobox.itemText(
+            self.det_face_widget.face_model_combobox.currentIndex())
         self._controller_local.set_detection_model(detection_model)
         self._controller_local.set_recognition_model(recognition_model)
 
@@ -215,7 +217,7 @@ class FaceEditorWindow(QMainWindow):
 
     def on_detection_results_changed(self, _):
         results = self._model_local.detection_results
-        self.display_detection(results)
+        self.display_detection(results, selected_ind=-1)
         self.det_face_widget.set_detection_results(results)
 
     def display_detection(self, results, selected_ind=-1):
@@ -226,8 +228,9 @@ class FaceEditorWindow(QMainWindow):
         pen_blue = QPen(QtCore.Qt.blue)
         pen_blue.setWidth(10)
         painter.setPen(pen_blue)
-        for i, ((top, right, bottom, left), name) in enumerate(
-                zip(self.det_face_widget.face_locations, self.det_face_widget.face_names)):
+
+        for i, result in enumerate(results):
+            (top, right, bottom, left), name = result.location, result.name
             if i == selected_ind:
                 painter.setPen(pen_red)
                 painter.drawRect(left, top, right - left, bottom - top)
@@ -357,7 +360,7 @@ class FaceEditorWindow(QMainWindow):
 
     def on_table_double_clicked(self, index):
         row = index.row()
-        self.display_detection(row)
+        self.display_detection(results=self._model_local.detection_results, selected_ind=row)
 
     def on_tag_drop(self, e):
         if (e.source() in [self.det_face_widget.result_widget, self.det_face_widget.list_db_tags_widget]):
