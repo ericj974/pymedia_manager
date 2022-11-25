@@ -15,77 +15,75 @@ argparser.add_argument('--dir',
                        help='Input dataset directory',
                        type=str)
 
+argparser.add_argument('--force',
+                       help='Overwrite existing entries',
+                       type=bool, default=True)
+
+argparser.add_argument('--clean',
+                       help='Delete all existing entries',
+                       type=bool, default=True)
+
 # logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
 
 
-class FaceDetectionDBConverter(object):
+class FaceDetectionDBBuilder(object):
 
-    def __init__(self, db_folder):
+    def __init__(self, db_folder, clean=True, overwrite=True):
 
         self.db_file = os.path.join(db_folder, db_json_filename)
         self.db_img_folder = os.path.join(db_folder, db_img_foldername)
+        self.overwrite = overwrite
 
-        if os.path.exists(self.db_file):
+        if os.path.exists(self.db_file) and clean:
             os.remove(self.db_file)
 
-        # Serializing json
-        json_object = json.dumps({}, indent=4)
-        # Write to file
-        with open(self.db_file, 'w') as f:
-            f.write(json_object)
+        if not os.path.exists(self.db_file):
+            # Serializing json
+            json_object = json.dumps({}, indent=4)
+
+            # Write to file
+            with open(self.db_file, 'w') as f:
+                f.write(json_object)
 
         self.face_db = FaceDetectionDB(db_folder)
 
     def rebuild(self):
-        self.rebuild_names()
-        self.rebuild_encodings()
-
-    def rebuild_names(self):
         names = os.listdir(self.db_img_folder)
         for name in names:
             filenames = os.listdir(os.path.join(self.db_img_folder, name))
-            for filename in filenames:
-                file = os.path.join(self.db_img_folder, name, filename)
-                img = cv2.imread(file)
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            for model in face_recognition_model:
+                logging.info(f"Creating embedding for model {model}")
+                for filename in filenames:
+                    logging.info(f"Creating embedding for {filename}, {name} with model {model}")
+                    file = os.path.join(self.db_img_folder, name, filename)
+                    img = cv2.imread(file)
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-                # Add an entry without encodings
-                self.face_db.add_to_db(name=name,
-                                       img=img,
-                                       file=file)
+                    # Read file
+                    file = os.path.join(self.face_db.db_img_folder, name, filename)
+                    qimage, _ = load_image(file)
+                    frame = QImageToCvMat(qimage)
 
-    def rebuild_encodings(self):
-        db = self.face_db.db
-        for model in face_recognition_model:
-            logging.info(f"Creating embedding for model {model}")
-            for i in range(len(db)):
-                v = db[str(i)]
-                embeddings = v.embeddings
-                if model in embeddings:
-                    continue
-                logging.info(f"Updating embeddings for {v.name} with model {model}")
-                # Read file
-                file = os.path.join(self.face_db.db_img_folder, v.name, v.filename)
-                qimage, _ = load_image(file)
-                frame = QImageToCvMat(qimage)
+                    # Representation
+                    embedding = face_encodings(imgs=[frame], recognition_model=model)[0]
 
-                # Representation
-                embedding = face_encodings(imgs=[frame], recognition_model=model)[0]
-
-                # Add to db
-                self.face_db.update_embedding_entry(name=v.name, embedding=embedding,
-                                                    filename=v.filename, model=model)
+                    # Add to db
+                    self.face_db.add_to_db(name=name, patch=img,
+                                           file=file, model=model, embedding=embedding, overwrite=self.overwrite)
 
 
 def main():
     # Initialization
     args = argparser.parse_args()
     dir_path = args.dir
+    clean = args.clean
+    overwrite = args.force
+
     if not os.path.isdir(dir_path):
         logging.error("input path does not exist or is not a folder...exiting.")
         sys.exit()
-    converter = FaceDetectionDBConverter(db_folder=dir_path)
+    converter = FaceDetectionDBBuilder(db_folder=dir_path, clean=clean, overwrite=overwrite)
     converter.rebuild()
 
 

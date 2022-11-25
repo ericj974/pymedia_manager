@@ -32,7 +32,7 @@ class DetectionResult:
         self.file = file
         self.embedding = embedding
         self.patch = patch
-        self.location = location
+        self.location = location # (top, right, bottom, left) as int
         self.name = name
 
 
@@ -118,7 +118,7 @@ def face_distance(face_encodings, face_to_compare):
     return np.linalg.norm(face_encodings - face_to_compare, axis=1)
 
 
-def compare_faces(known_face_encodings, face_encoding_to_check, tolerance=0.55):
+def compare_faces(known_face_encodings, face_encoding_to_check, tolerance=0.6):
     """
     Compare a list of face encodings against a candidate encoding to see if they match.
 
@@ -149,27 +149,27 @@ def face_recognition(file, detection_model, recognition_model, db, max_size=-1):
 
     patches, locations_scaled = face_locations(frame, detection_model=detection_model)
     encodings = face_encodings(imgs=patches, recognition_model=recognition_model)
-    known_encodings = db.get_embeddings(model=recognition_model)
+    known_encodings, known_names = db.get_embeddings(model=recognition_model)
 
-    for (top, right, bottom, left), encoding in zip(locations_scaled, encodings):
+    for (top, right, bottom, left), embedding in zip(locations_scaled, encodings):
         (top, right, bottom, left) = (int(top * r), int(right * r), int(bottom * r), int(left * r))
         patch = frame_orig[top:bottom, left:right]
         # imgs.append(frame_orig[top:bottom, left:right])
         # locations.append((top, right, bottom, left))
 
         # See if the face is a match for the known face(s)
-        matches = compare_faces(known_encodings, encoding)
+        matches = compare_faces(known_encodings, embedding)
         name = unknown_tag
 
         # If a match was found in known_face_encodings, select the on with the lowest distance
         if True in matches:
-            known_encodings = np.array(known_encodings)[matches]
-            known_face_names = np.array(db.known_face_names)[matches]
-            distances = face_distance(known_encodings, encoding)
-            best_match_index = np.argmin(distances)
-            name = known_face_names[best_match_index]
+            macthed_known_encodings = np.array(known_encodings)[matches]
+            _names = np.array(known_names)[matches]
+            _dist = face_distance(macthed_known_encodings, embedding)
+            _index = np.argmin(_dist)
+            name = _names[_index]
 
-        detections.append(DetectionResult(file=file, embedding=encoding, patch=patch,
+        detections.append(DetectionResult(file=file, embedding=embedding, patch=patch,
                                           location=(top, right, bottom, left), name=name))
 
     return detections

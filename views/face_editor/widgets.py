@@ -35,6 +35,10 @@ class MyQListWidgetItem(QListWidgetItem):
         super(QListWidgetItem, self).__init__(os.path.basename(result.name))
         self.result = result
 
+    def setText(self, text):
+        self.result.name = text
+        super().setText(text)
+
 
 class MyQListWidget(QListWidget):
     def __init__(self, parent=None):
@@ -207,15 +211,11 @@ class FaceDetectionWidget(QtWidgets.QWidget):
             if item.result.name == utils.unknown_tag:
                 continue
 
-            # Add an entry without encodings
-            self.db.add_to_db(name=item.result.name,
-                              img=item.result.patch,
-                              file=item.result.file)
-
             # Create encoding for all recognition models
             for model in utils.face_recognition_model:
-                item_db = self.db.get_entry(name=item.result.name, filename=os.path.basename(item.result.file))
-                if model in item_db.embeddings:
+                item_db = self.db.get_entry(name=item.result.name, filename=os.path.basename(item.result.file),
+                                            model=model)
+                if item_db is not None:
                     continue
                 logging.info(f"Creating embedding for model {model}")
 
@@ -223,8 +223,8 @@ class FaceDetectionWidget(QtWidgets.QWidget):
                 embedding = utils.face_encodings(imgs=[item.result.patch], recognition_model=model)[0]
 
                 # Add to db
-                self.db.update_embedding_entry(name=item.result.name, embedding=embedding,
-                                               filename=item.result.filename, model=model)
+                self.db.add_to_db(name=item.result.name, patch=item.result.patch, embedding=embedding,
+                                  location=item.result.location, file=item.result.file, model=model, overwrite=True)
 
         self.update_db_display()
 
@@ -233,8 +233,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
             text, okPressed = QtWidgets.QInputDialog.getText(self, "New tag", "New tag:")
             if okPressed and text != '':
                 if len(self.result_widget.selectedItems()) > 0:
-                    self.face_names[self.result_widget.currentIndex().row()] = text
-                    self.result_widget.currentItem().setText(self.face_names[self.result_widget.currentIndex().row()])
+                    self.result_widget.currentItem().setText(text)
 
         if event.type() == QEvent.ContextMenu and source is self.result_widget:
             if len(self.result_widget.selectedItems()) > 0:
@@ -242,20 +241,14 @@ class FaceDetectionWidget(QtWidgets.QWidget):
                 action = QAction('Rename', self)
                 action.triggered.connect(rename)
                 menu.addAction(action)
-
-                if menu.exec_(event.globalPos()):
-                    item = source.itemAt(event.pos())
-                    print(item.text())
+                menu.exec_(event.globalPos())
                 return True
         return super().eventFilter(source, event)
 
     def on_db_table_clicked(self, index):
         if len(self.result_widget.selectedItems()) > 0:
-            self.face_names[self.result_widget.currentIndex().row()] = self.list_db_tags_widget.item(index.row()).text()
-            self.result_widget.currentItem().setText(self.face_names[self.result_widget.currentIndex().row()])
+            self.result_widget.currentItem().setText(self.list_db_tags_widget.item(index.row()).text())
 
     def on_db_drop(self, e):
         if (e.source() == self.result_widget):
             self.save_selected_det_to_db()
-
-
