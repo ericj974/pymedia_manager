@@ -188,7 +188,7 @@ class FaceDetectionWidget(QtWidgets.QWidget):
 
     def update_db_display(self):
         self.list_db_tags_widget.clear()
-        self.list_db_tags_widget.addItems(list(set(self.db.known_face_names)))
+        self.list_db_tags_widget.addItems(self.db.known_face_names)
 
     def set_detection_results(self, results: list):
         self.result_widget.clear()

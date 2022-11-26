@@ -59,8 +59,7 @@ class FileExplorerWidget(QWidget):
             action = QAction('Face Detection', self)
             action.triggered.connect(lambda: self.selected_files_face_det.emit())
             menu.addAction(action)
-            if menu.exec_(event.globalPos()):
-                item = source.itemAt(event.pos())
+            menu.exec_(event.globalPos())
             return True
         return super().eventFilter(source, event)
 

@@ -148,8 +148,7 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
 
         if not self.face_editor_batch:
             self.face_editor_batch = FaceEditorBatchWindow(model=self._model, controller=self._controller,
-                                                           db=self.face_db, model_local=self._model_face,
-                                                           controller_local=self._controller_face)
+                                                           model_local=self._model_face, controller_local=self._controller_face)
             self.face_editor_batch.destroyed.connect(_on_destroyed)
         self.face_editor_batch.show()
 
@@ -193,4 +192,5 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
             file_extension = file_extension[1:]
             if file_extension in FILE_EXTENSION_PHOTO_JPG:
                 files.append(file)
-        self.face_editor_batch.detect_faces_batch(files)
+        self.launch_face_editor_batch()
+        self._controller_face.detect_faces(files)

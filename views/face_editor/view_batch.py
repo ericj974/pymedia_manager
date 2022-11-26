@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import os
 
 # Form implementation generated from reading ui file 'gui.ui'
@@ -8,15 +9,20 @@ import os
 # WARNING! All changes made in this file will be lost!
 
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QStatusBar, QTableWidgetItem
+from PyQt5 import QtCore, QtWidgets, Qt
+from PyQt5.QtCore import QEvent
+from PyQt5.QtGui import QPalette
+from PyQt5.QtWidgets import QMainWindow, QStatusBar, QTableWidgetItem, QHBoxLayout, QLabel, QLineEdit, QCompleter, \
+    QPushButton
 
+from common.utils import pixmap_from_frame
 from controller import MainController
 from model import MainModel
-from utils import load_image
+from utils import load_image, ImageUserComment
 from views.face_editor import utils
 from views.face_editor.controller_model import FaceDetectionController, FaceDetectionModel
 from views.face_editor.utils import DetectionResult
+from views.img_editor.widgets import ImageLabel
 
 
 class FaceEditorBatchWindow(QMainWindow):
@@ -39,29 +45,43 @@ class FaceEditorBatchWindow(QMainWindow):
 
         # Main table
         self.table_result = QtWidgets.QTableWidget(self.central_widget)
+        self.table_result.setMinimumWidth(150 + 150 + 50 + 50)
+        self.table_result.setMaximumWidth(150 + 150 + 50 + 50)
+        # self.table_result.setColumnWidth(0, 150)
+
         self.table_result.doubleClicked.connect(self.on_table_double_clicked)
-        self.table_result.setColumnCount(2)
+        self.table_result.clicked.connect(self.on_table_single_clicked)
+        self.table_result.setColumnCount(4)
         self.table_result.setRowCount(0)
-        self.table_result.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Issue/Tag"))
-        self.table_result.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Filename"))
+
+        self.table_result.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem("Filename"))
+        self.table_result.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem("Issue/Tag"))
+        self.table_result.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem(""))
+        self.table_result.setHorizontalHeaderItem(3, QtWidgets.QTableWidgetItem(""))
 
         self.table_result.horizontalHeader().setVisible(True)
         self.table_result.setSortingEnabled(True)
         self.table_result.horizontalHeader().setCascadingSectionResizes(True)
-        self.table_result.horizontalHeader().setDefaultSectionSize(250)
         self.table_result.horizontalHeader().setSortIndicatorShown(True)
-        self.table_result.horizontalHeader().setStretchLastSection(False)
         self.table_result.verticalHeader().setCascadingSectionResizes(True)
+
+        # Patch viewer widget
+        self.media_widget = QLabel()
+
+        # Main Layout
+        self.layout = QHBoxLayout()
+        self.layout.addWidget(self.table_result)
+        self.layout.addWidget(self.media_widget)
+        self.central_widget.setLayout(self.layout)
 
         # listen for model event signals
         # self._model.selected_media_changed.connect(self.on_selected_media_changed)
         # self._model.selected_media_comment_updated.connect(self.on_model_comment_updated)
         self._model_local.detection_results_changed.connect(self.on_detection_results_changed)
 
-
-        self.setMinimumSize(807, 737)
+        self.setMinimumSize(640, 480)
         self.setWindowTitle("Tags")
-        self.showMaximized()
+        # self.showMaximized()
         self.setStatusBar(QStatusBar())
         self.setVisible(False)
 
@@ -70,18 +90,160 @@ class FaceEditorBatchWindow(QMainWindow):
 
     def on_detection_results_changed(self, _):
         results = self._model_local.detection_results
-        ind = 0
+        self.table_result.setRowCount(len(results))
         # Display
-        for result in results:
-            filename = os.path.basename(result.file)
-            self.table_result.setItem(ind, 0, MyQTableWidgetItem(result))
-            self.table_result.setItem(ind, 1, QTableWidgetItem(filename))
-            ind +=1
+        for i, result in enumerate(results):
+            # Filename
+            self.table_result.setItem(i, 0, MyQTableWidgetItem(result))
+            # Name
+            cell = MyQTableWidgetCell(result, self._model_local.db.known_face_names)
+            index = QtCore.QPersistentModelIndex(self.table_result.model().index(i, 1))
+            cell.returnPressed.connect(lambda *args, index=index: self.on_return_pressed(index))
+            self.table_result.setCellWidget(i, 1, cell)
+            # Action save to Image
+            btn = QPushButton('Save to Img', self)
+            index = QtCore.QPersistentModelIndex(self.table_result.model().index(i, 2))
+            btn.clicked.connect(lambda *args, index=index: self.save_to_img(index))
+            btn.setEnabled(True)
+            self.table_result.setCellWidget(i, 2, btn)
+            # Action save to DB
+            btn = QPushButton('Save to db', self)
+            index = QtCore.QPersistentModelIndex(
+                self.table_result.model().index(i, 3))
+            btn.clicked.connect(lambda *args, index=index: self.save_to_db(index))
+            btn.setEnabled(False)
+            self.table_result.setCellWidget(i, 3, btn)
+
+        self.table_result.repaint()
+
+    def save_to_img(self, index):
+        if index.isValid():
+            # Get the result and (maybe) updated tag
+            cell = self.table_result.cellWidget(index.row(), 1)
+            result = cell.result
+            result.name = cell.text()
+
+            # Update the file comment
+            comment = ImageUserComment.load_from_file(result.file)
+            comment.persons = list(set(comment.persons + [result.name]))
+
+            if result.file == self._model.media_path:
+                self._controller.update_media_comment(comment)
+                self._controller.save_media_comment()
+            else:
+                comment.save_comment(result.file)
+
+            # Turn the background green and deactivate button
+            palette = QPalette()
+            palette.setColor(QPalette.Base, QtCore.Qt.green)
+            palette.setColor(QPalette.Text, QtCore.Qt.black)
+            btn = self.table_result.cellWidget(index.row(), 2)
+            btn.setPalette(palette)
+            btn.update()
+            btn.setEnabled(False)
+
+    def save_to_db(self, index):
+        if index.isValid():
+            # Get the result and (maybe) updated tag
+            cell = self.table_result.cellWidget(index.row(), 1)
+            result = cell.result
+            result.name = cell.text()
+
+            # Create encoding for all recognition models
+            for model in utils.face_recognition_model:
+                item_db = self._model_local.db.get_entry(name=result.name, filename=os.path.basename(result.file),
+                                            model=model)
+                if item_db is not None:
+                    continue
+                logging.info(f"Creating embedding for model {model}")
+
+                # Representation
+                embedding = utils.face_encodings(imgs=[result.patch], recognition_model=model)[0]
+
+                # Add to db
+                self._model_local.db.add_to_db(name=result.name, patch=result.patch, embedding=embedding,
+                                  location=result.location, file=result.file, model=model, overwrite=True)
+
+                # Turn the background green and deactivate button
+                palette = QPalette()
+                palette.setColor(QPalette.Base, QtCore.Qt.green)
+                palette.setColor(QPalette.Text, QtCore.Qt.black)
+                btn = self.table_result.cellWidget(index.row(), 3)
+                btn.setPalette(palette)
+                btn.update()
+                btn.setEnabled(False)
+
+
 
     def on_table_double_clicked(self, index):
         row = index.row()
-        file = self.table_result.item(row, 0).file
+        file = self.table_result.item(row, 0).result.file
         self._controller.set_media_path(file)
+
+    def on_table_single_clicked(self, index):
+        row = index.row()
+        patch = self.table_result.cellWidget(row, 1).result.patch
+        pix = pixmap_from_frame(patch)
+        self.media_widget.setPixmap(
+            pix.scaled(self.media_widget.width(), self.media_widget.height(), QtCore.Qt.KeepAspectRatio))
+
+    def on_return_pressed(self, index):
+        if index.isValid():
+            # Get the result and (maybe) updated tag
+            cell = self.table_result.cellWidget(index.row(), 1)
+            if cell.text() != cell.result.name:
+                # Change BG color to red
+                palette = QPalette()
+                palette.setColor(QPalette.Base, QtCore.Qt.red)
+                palette.setColor(QPalette.Text, QtCore.Qt.black)
+                cell.setPalette(palette)
+                # Make the add to db btn visible
+                if cell.result.name != utils.unknown_tag:
+                    self.table_result.cellWidget(index.row(), 3).setEnabled(True)
+
+
+class MyQTableWidgetActionCell(QPushButton):
+    def __init__(self, result: DetectionResult, wordlist):
+        super(MyQTableWidgetActionCell, self).__init__("Add to Image")
+        self.result = result
+        # Autocomplete
+        completer = QCompleter(wordlist, self)
+        completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.setCompleter(completer)
+        # Escape key event
+        self.installEventFilter(self)
+        self.returnPressed.connect(self.on_return_pressed)
+
+    @property
+    def file(self):
+        return self.result.file
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.KeyPress and event.key() == QtCore.Qt.Key_Escape and source is self:
+            super(MyQTableWidgetCell, self).setText(self.result.name)
+        return super().eventFilter(source, event)
+
+
+class MyQTableWidgetCell(QLineEdit):
+    def __init__(self, result: DetectionResult, wordlist):
+        super(MyQTableWidgetCell, self).__init__(os.path.basename(result.name))
+        self.result = result
+        # Autocomplete
+        completer = QCompleter(wordlist, self)
+        completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.setCompleter(completer)
+        # Escape key event
+        self.installEventFilter(self)
+
+    @property
+    def file(self):
+        return self.result.file
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.KeyPress and event.key() == QtCore.Qt.Key_Escape and source is self:
+            super(MyQTableWidgetCell, self).setText(self.result.name)
+        return super().eventFilter(source, event)
+
 
 class MyQTableWidgetItem(QTableWidgetItem):
     def __init__(self, result: DetectionResult):

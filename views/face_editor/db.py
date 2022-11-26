@@ -16,7 +16,7 @@ class FaceDetectionDBItem:
     def __init__(self, name, filename, location, embedding, model):
         self.name = name
         self.filename = filename
-        self.location = location # (top, right, bottom, left) as int
+        self.location = location  # (top, right, bottom, left) as int
         self.embedding = embedding.tolist() if not isinstance(embedding, list) else embedding
         self.model = model
         self.hash = f"{filename}_{location}_{model}"
@@ -29,7 +29,6 @@ class FaceDetectionDBItem:
             'name': self.name,
             'model': self.model
         }
-
 
     @staticmethod
     def from_dict(dic):
@@ -80,7 +79,7 @@ class FaceDetectionDB(metaclass=Singleton):
 
     @property
     def known_face_names(self):
-        return [item.name for item in self.db.values()]
+        return list(set([item.name for item in self.db.values()]))
 
     @property
     def known_face_filenames(self):
@@ -92,7 +91,7 @@ class FaceDetectionDB(metaclass=Singleton):
 
     def get_embeddings(self, model='face_recognition'):
         return ([np.array(item.embedding) for item in self.db.values() if model == item.model],
-        [item.name for item in self.db.values() if model == item.model])
+                [item.name for item in self.db.values() if model == item.model])
 
     def load_patch(self, file):
         # Patch
@@ -109,7 +108,6 @@ class FaceDetectionDB(metaclass=Singleton):
         # Location in comment
         user_comment = ImageUserComment.create_item(comments=f"{location}")
         user_comment.save_comment(file)
-
 
     def load_db(self):
         # If no content, create empty json file
@@ -156,7 +154,6 @@ class FaceDetectionDB(metaclass=Singleton):
         assert file is not None and file != ''
         assert model is not None and model in face_recognition_model
         assert embedding is not None
-
 
         filename_out = os.path.basename(file)
         file_out = os.path.join(self.db_img_folder, name, filename_out)
