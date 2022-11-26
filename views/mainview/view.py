@@ -193,4 +193,4 @@ class MediaManagementView(QMainWindow, gui.Ui_MainWindow):
             if file_extension in FILE_EXTENSION_PHOTO_JPG:
                 files.append(file)
         self.launch_face_editor_batch()
-        self._controller_face.detect_faces(files)
+        self.face_editor_batch.detect_faces(files)

@@ -49,6 +49,7 @@ class FaceEditorWindow(QMainWindow):
         self._model.selected_media_changed.connect(self.on_selected_media_changed)
         self._model.selected_media_comment_updated.connect(self.on_model_comment_updated)
         self._model_local.detection_results_changed.connect(self.on_detection_results_changed)
+        self._model_local.selected_detection_result_changed.connect(self.on_detection_selection_changed)
 
         self.setMinimumSize(300, 200)
         self.setWindowTitle("Face Editor")
@@ -215,10 +216,12 @@ class FaceEditorWindow(QMainWindow):
         # Detect
         self._controller_local.detect_faces([self.file])
 
-    def on_detection_results_changed(self, _):
-        results = self._model_local.detection_results
+    def on_detection_results_changed(self, results):
         self.display_detection(results, selected_ind=-1)
         self.det_face_widget.set_detection_results(results)
+
+    def on_detection_selection_changed(self, idx):
+        self.display_detection(results=self._model_local.detection_results, selected_ind=idx)
 
     def display_detection(self, results, selected_ind=-1):
         painter = QPainter(self.media_widget.qimage)

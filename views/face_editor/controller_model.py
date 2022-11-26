@@ -10,8 +10,10 @@ class FaceDetectionModel(QObject):
     detection_model_changed = pyqtSignal(str)
     # Change of recognition model
     recognition_model_changed = pyqtSignal(str)
-    # Detection results
+    # Detection results for the file specified by main model
     detection_results_changed = pyqtSignal(list)
+    # Selected detection result
+    selected_detection_result_changed = pyqtSignal(int)
 
     def __init__(self, db):
         super(FaceDetectionModel, self).__init__()
@@ -47,6 +49,9 @@ class FaceDetectionModel(QObject):
         self._det_results = value
         self.detection_results_changed.emit(value)
 
+    def set_selection(self, idx):
+        self.selected_detection_result_changed.emit(idx)
+
 
 class FaceDetectionController:
     def __init__(self, model: FaceDetectionModel):
@@ -64,6 +69,9 @@ class FaceDetectionController:
 
     def set_detection_results(self, results: list):
         self._model.detection_results = results
+
+    def set_selected_result(self, idx):
+        self._model.set_selection(idx)
 
     def detect_faces(self, files):
         detections = []
