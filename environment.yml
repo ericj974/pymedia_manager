@@ -1,0 +1,21 @@
+name: media
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.4
+  - deepface
+  - numpy
+  - opencv
+  - pillow
+  - pyqt
+  - pyqtwebengine # gps view
+  - piexif
+  - send2trash
+  - timezonefinder # this is to correct utc to correct timezone in case of QuickTime videos
+  - pytz
+  - pip
+  - pip:
+      - moviepy # Bug with func if using 1.0.3 conda version
+      - pyheif
+      - qtpy # needed for pyqtlet

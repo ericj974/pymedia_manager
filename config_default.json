@@ -1,0 +1,19 @@
+{
+  "DB_FACE_FOLDER": "./resources/test_db_faces",
+  "DB_TAGS_FOLDER": "./resources/test_db_tags",
+
+  "ClipEditorWindow": {
+    "AUTOPLAY": true
+  },
+
+  "MainTileWindow": {
+    "MAX_COL": 4,
+    "TILES_THUMBNAIL_SIZE": 800
+    },
+
+  "MainRenamerWindow": {
+    "CREATE_BACKUP": false,
+    "BACKUP_FOLDERNAME": ".backup",
+    "DELETE_DUPLICATE": true
+  }
+}

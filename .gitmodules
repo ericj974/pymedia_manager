@@ -1,0 +1,3 @@
+[submodule "modules/pyqtlet2"]
+	path = modules/pyqtlet2
+	url = git@github.com:ericj974/pyqtlet2.git

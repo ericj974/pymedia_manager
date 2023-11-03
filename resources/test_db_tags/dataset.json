@@ -1,0 +1,10 @@
+{
+    "tag1": {
+        "type": "tag",
+        "name": "TaG1"
+    },
+    "tag2": {
+        "type": "tag",
+        "name": "Tag2"
+    }
+}
